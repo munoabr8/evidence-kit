@@ -1,6 +1,1 @@
-# Track common vendored artifact types with Git LFS (optional)
-artifacts/*.js filter=lfs diff=lfs merge=lfs -text
-artifacts/*.css filter=lfs diff=lfs merge=lfs -text
-artifacts/*.zip filter=lfs diff=lfs merge=lfs -text
-artifacts/*.tar.gz filter=lfs diff=lfs merge=lfs -text
 media-pack/player/* !text !filter !merge !diff
