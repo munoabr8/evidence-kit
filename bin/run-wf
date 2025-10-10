@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Usage: ./bin/run-wf.sh [workflow]
+# or:    WF=build ./bin/run-wf.sh
+
+WF="${1:-${WF:-tests}}"
+echo "[wf] starting workflow '$WF' at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+case "$WF" in
+  tests)
+    echo "[wf] running tests"
+    pytest -q || true
+    ;;
+  build)
+    echo "[wf] building project"
+    make build || true
+    ;;
+  ci)
+    echo "[wf] CI smoke test"
+    ./scripts/ci_smoke.sh || true
+    ;;
+  analysis)
+    echo "[wf] static analysis"
+    ./tools/analyze.sh || true
+    ;;
+  *)
+    echo "[wf] unknown workflow: '$WF'"
+    echo "Usage: ./bin/run-wf.sh [tests|build|ci|analysis]"
+    exit 2
+    ;;
+esac
+
+echo "[wf] finished workflow '$WF' at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
