@@ -1,7 +1,9 @@
 PORT ?= 8020
 BASIC_AUTH ?= wf:pass
 SHELL := /bin/bash
-ART ?= artifacts
+
+ROOT := $(shell git rev-parse --show-toplevel)
+ART ?= $(ROOT)/artifacts
 
 .PHONY: setup live live-stop
 setup:
