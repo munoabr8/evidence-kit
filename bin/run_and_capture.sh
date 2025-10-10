@@ -2,7 +2,9 @@
 set -euo pipefail
 
 # --- Config ---
-ART_DIR="${ART_DIR:-artifacts}"
+ROOT="${ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+ART_DIR="${ART_DIR:-$ROOT/artifacts}"
+
 WF="${1:-${WF:-tests}}"
 PORT="${PORT:-8009}"
 
