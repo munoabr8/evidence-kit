@@ -1,0 +1,50 @@
+# templates/reusable-action.yml
+name: "Run and Capture Evidence"
+description: "Reusable workflow to run a workflow target and generate Hunchly-compatible artifacts"
+
+on:
+  workflow_call:
+    inputs:
+      workflow:
+        description: "Workflow name (e.g., ci, build, tests)"
+        required: true
+        type: string
+      port:
+        description: "Port to serve artifacts on"
+        required: false
+        type: number
+        default: 8009
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y python3-pip ttyd
+          pip install --user ansi2html
+
+      - name: Run and capture workflow
+        run: |
+          chmod +x bin/run_and_capture.sh bin/run-wf
+          ./bin/run_and_capture.sh ${{ inputs.workflow }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidence-${{ inputs.workflow }}
+          path: artifacts/
+
+      - name: Output capture URL
+        run: |
+          echo "Artifacts ready for Hunchly capture."
+          echo "Open: http://localhost:${{ inputs.port }}/wf.html"

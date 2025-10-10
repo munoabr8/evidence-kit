@@ -19,11 +19,20 @@ status: ## show ttyd status
 	@[ -f $(ART)/ttyd.pid ] && ps -o pid,cmd -p $$(cat $(ART)/ttyd.pid) || echo "[live] not running"
 
 
+serve:
+	@pid=$$(lsof -t -i :$(PORT)); \
+	if [ -n "$$pid" ]; then \
+		echo "[serve] killing existing process on port $(PORT) (PID=$$pid)"; \
+		kill -9 $$pid; \
+	fi; \
+	mkdir -p artifacts; \
+	cd artifacts && python3 -m http.server $(PORT)
+
 
 capture: setup ## run workflow, redact, convert to HTML for Hunchly
 	@mkdir -p $(ART)
 	@echo "[capture] running workflow"
-	@env -i PATH="/usr/bin:/bin:/usr/local/bin" bash -lc './bin/run-wf.sh' 2>&1 | tee $(ART)/wf.raw.log
+	@env -i PATH="/usr/bin:/bin:/usr/local/bin" bash -lc './bin/run-wf' 2>&1 | tee $(ART)/wf.raw.log
 	@sed -E 's/(ghp_[A-Za-z0-9]{36})/[REDACTED]/g;s/(GITHUB_TOKEN=)[^ ]+/\1[REDACTED]/g' $(ART)/wf.raw.log > $(ART)/wf.log
 	@if command -v ansi2html >/dev/null; then ansi2html < $(ART)/wf.log > $(ART)/wf.html; \
 	else printf '<!doctype html><meta charset="utf-8"><title>wf</title><pre>' > $(ART)/wf.html; \

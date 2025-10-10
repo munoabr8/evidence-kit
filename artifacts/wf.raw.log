@@ -1,1 +1,5 @@
-bash: line 1: ./bin/run-wf.sh: No such file or directory
+[wf] starting workflow 'tests' at 2025-10-10T01:16:04Z
+[wf] running tests
+
+no tests ran in 0.00s
+[wf] finished workflow 'tests' at 2025-10-10T01:16:04Z
