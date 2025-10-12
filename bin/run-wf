@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./bin/run-wf.sh [workflow]
-# or:    WF=build ./bin/run-wf.sh
+# Usage: ./bin/run-wf  [workflow]
+# or:    WF=build ./bin/run-wf
 
 WF="${1:-${WF:-tests}}"
 echo "[wf] starting workflow '$WF' at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
