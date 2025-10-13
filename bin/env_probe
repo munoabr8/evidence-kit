@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+bool() { [ "${1:-}" = "true" ] && echo true || echo false; }
+
+# ---------- detect ----------
+is_codespaces=false
+if [ "${CODESPACES:-}" = "true" ] || [ -n "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-}" ]; then
+  is_codespaces=true
+fi
+
+in_git=false
+git_root=""
+nested=false
+outer_git_root=""
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  in_git=true
+  git_root=$(git rev-parse --show-toplevel)
+  dir="$git_root"
+  while :; do
+    parent=$(dirname "$dir")
+    [ "$parent" = "$dir" ] && break
+    if git -C "$parent" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      nested=true
+      outer_git_root=$(git -C "$parent" rev-parse --show-toplevel 2>/dev/null || echo "$parent")
+      break
+    fi
+    dir="$parent"
+  done
+fi
+
+in_docker=false
+{ [ -f /.dockerenv ] || grep -qE '/docker/|/containerd/' /proc/1/cgroup 2>/dev/null; } && in_docker=true
+in_github_actions=false
+[ "${GITHUB_ACTIONS:-}" = "true" ] && in_github_actions=true
+
+# ---------- output helpers ----------
+print_human() {
+  echo "environment:"
+  echo "  codespaces:        $(bool "$is_codespaces")"
+  echo "  docker:            $(bool "$in_docker")"
+  echo "  github_actions:    $(bool "$in_github_actions")"
+  echo "git:"
+  echo "  in_repo:           $(bool "$in_git")"
+  echo "  repo_root:         ${git_root:-<none>}"
+  echo "  nested_in_parent:  $(bool "$nested")"
+  echo "  outer_repo_root:   ${outer_git_root:-<none>}"
+}
+
+print_help() {
+  cat <<'EOF'
+Usage: detect_env.sh [OPTION]
+
+No option        Show human summary + JSON (JSON is last line)
+--json           Print JSON only
+--is-codespaces  Exit 0 if in GitHub Codespaces, else 1
+--require-git    Exit 0 if inside a git repo, else exit 3
+--require-not-nested
+                 Exit 0 if not nested in another git repo, else exit 2
+--help           Show this help
+
+Exit codes:
+ 0  success / condition met
+ 1  condition false (--is-* checks)
+ 2  nested repo (blocked by --require-not-nested)
+ 3  not in git repo (blocked by --require-git)
+EOF
+}
+
+print_json() {
+  printf '{"env":{"codespaces":%s,"docker":%s,"github_actions":%s},"git":{"in_repo":%s,"repo_root":"%s","nested_in_parent":%s,"outer_repo_root":"%s"}}\n' \
+    "$(bool "$is_codespaces")" \
+    "$(bool "$in_docker")" \
+    "$(bool "$in_github_actions")" \
+    "$(bool "$in_git")" \
+    "${git_root//\"/\\\"}" \
+    "$(bool "$nested")" \
+    "${outer_git_root//\"/\\\"}"
+}
+
+# ---------- CLI switches ----------
+
+case "${1:-}" in
+  --json) print_json ;;
+  --is-codespaces) [ "$is_codespaces" = true ] ;;
+  --require-not-nested)
+    if [ "$nested" = true ]; then
+      echo "nested repo: inner=$git_root outer=$outer_git_root" >&2
+      exit 2
+    fi
+    ;;
+  --require-git)
+    if [ "$in_git" != true ]; then
+      echo "not in a git repository" >&2
+      exit 3
+    fi
+    ;;
+  --help|-h) print_help ;;
+  *) print_human; print_json ;;
+esac
