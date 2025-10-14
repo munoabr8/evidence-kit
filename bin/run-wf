@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#./bin/run-wf 
 set -euo pipefail
 
 # Usage: ./bin/run-wf  [workflow]

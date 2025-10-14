@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#./bin/env_probe
 set -Eeuo pipefail
 
 bool() { [ "${1:-}" = "true" ] && echo true || echo false; }
@@ -29,6 +30,15 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   done
 fi
 
+
+is_submodule=false
+superproject_root=""
+if [ "$in_git" = true ]; then
+  superproject_root="$(git rev-parse --show-superproject-working-tree 2>/dev/null || true)"
+  [ -n "$superproject_root" ] && is_submodule=true
+fi
+
+
 in_docker=false
 { [ -f /.dockerenv ] || grep -qE '/docker/|/containerd/' /proc/1/cgroup 2>/dev/null; } && in_docker=true
 in_github_actions=false
@@ -45,6 +55,8 @@ print_human() {
   echo "  repo_root:         ${git_root:-<none>}"
   echo "  nested_in_parent:  $(bool "$nested")"
   echo "  outer_repo_root:   ${outer_git_root:-<none>}"
+  echo "  is_submodule:      $(bool "$is_submodule")"
+  echo "  superproject_root: ${superproject_root:-<none>}"
 }
 
 print_help() {
@@ -57,6 +69,8 @@ No option        Show human summary + JSON (JSON is last line)
 --require-git    Exit 0 if inside a git repo, else exit 3
 --require-not-nested
                  Exit 0 if not nested in another git repo, else exit 2
+--is-submodule           Exit 0 if inside a Git submodule, else 1
+--require-not-submodule  Exit 0 unless inside a submodule, else exit 4               
 --help           Show this help
 
 Exit codes:
@@ -64,18 +78,21 @@ Exit codes:
  1  condition false (--is-* checks)
  2  nested repo (blocked by --require-not-nested)
  3  not in git repo (blocked by --require-git)
+ 4  inside a git submodule (blocked by --require-not-submodule)  
 EOF
 }
 
 print_json() {
-  printf '{"env":{"codespaces":%s,"docker":%s,"github_actions":%s},"git":{"in_repo":%s,"repo_root":"%s","nested_in_parent":%s,"outer_repo_root":"%s"}}\n' \
-    "$(bool "$is_codespaces")" \
-    "$(bool "$in_docker")" \
-    "$(bool "$in_github_actions")" \
-    "$(bool "$in_git")" \
-    "${git_root//\"/\\\"}" \
-    "$(bool "$nested")" \
-    "${outer_git_root//\"/\\\"}"
+printf '{"env":{"codespaces":%s,"docker":%s,"github_actions":%s},"git":{"in_repo":%s,"repo_root":"%s","nested_in_parent":%s,"outer_repo_root":"%s","is_submodule":%s,"superproject_root":"%s"}}\n' \
+  "$(bool "$is_codespaces")" \
+  "$(bool "$in_docker")" \
+  "$(bool "$in_github_actions")" \
+  "$(bool "$in_git")" \
+  "${git_root//\"/\\\"}" \
+  "$(bool "$nested")" \
+  "${outer_git_root//\"/\\\"}" \
+  "$(bool "$is_submodule")" \
+  "${superproject_root//\"/\\\"}"
 }
 
 # ---------- CLI switches ----------
@@ -93,6 +110,13 @@ case "${1:-}" in
     if [ "$in_git" != true ]; then
       echo "not in a git repository" >&2
       exit 3
+    fi
+    ;;
+      --is-submodule) [ "$is_submodule" = true ] ;;
+  --require-not-submodule)
+    if [ "$is_submodule" = true ]; then
+      echo "submodule context: submodule=$git_root superproject=$superproject_root" >&2
+      exit 4
     fi
     ;;
   --help|-h) print_help ;;

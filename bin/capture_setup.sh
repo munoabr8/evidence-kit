@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#./bin/capture_setup.sh
 set -euo pipefail
 
 # Ensure required tools exist

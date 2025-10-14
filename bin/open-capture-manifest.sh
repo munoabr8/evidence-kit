@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#./bin/open-capture-manifest.sh
 set -euo pipefail
 
 PLAN="${1:-artifacts/capture_plan.txt}"

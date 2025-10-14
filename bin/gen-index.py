@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#./bin/gen-index.py
 import os
 import mimetypes
 from html import escape
