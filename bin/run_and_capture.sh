@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+#./bin/run_and_capture.sh
 set -euo pipefail
 
 # --- Config ---
