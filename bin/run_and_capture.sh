@@ -3,8 +3,13 @@
 set -euo pipefail
 
 # --- Config ---
-ROOT="${ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-ART_DIR="${ART_DIR:-$ROOT/artifacts}"
+
+: "${ROOT:?missing ROOT}"
+: "${ART_DIR:?missing ART_DIR}"
+
+case "$ROOT" in /*) ;; *) echo "ROOT must be absolute" >&2; exit 2;; esac
+case "$ART_DIR" in /*) ;; *) echo "ART_DIR must be absolute" >&2; exit 2;; esac
+
 
 WF="${1:-${WF:-tests}}"
 PORT="${PORT:-8020}"
