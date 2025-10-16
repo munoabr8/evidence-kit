@@ -23,7 +23,16 @@ CAPTURE_PLAN="$ART_DIR/capture_plan.txt"
 
 echo "[capture] starting workflow '$WF' at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
+# --- Capture contextual information ---
+if [ -x "./bin/capture_context.sh" ]; then
+  echo "[capture] gathering context..."
+  ./bin/capture_context.sh
+else
+  echo "[capture] WARNING: capture_context.sh not found or not executable"
+fi
+
 # --- Execute the workflow and record output ---
+START_TIME=$(date +%s)
 env -i PATH="/usr/bin:/bin:/usr/local/bin" \
   bash -lc "./bin/run-wf $WF" 2>&1 | tee "$RAW_LOG"
 
@@ -44,10 +53,30 @@ else
   } > "$HTML"
 fi
 
+# --- Update execution metadata with timing ---
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+if [ -f "$ART_DIR/execution_metadata.json" ]; then
+  # Update existing metadata with workflow execution details
+  TMP_META=$(mktemp)
+  jq --arg wf "$WF" \
+     --arg dur "$DURATION" \
+     --arg end "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+     '. + {workflow: $wf, duration_seconds: ($dur | tonumber), end_time: $end}' \
+     "$ART_DIR/execution_metadata.json" > "$TMP_META" 2>/dev/null || cp "$ART_DIR/execution_metadata.json" "$TMP_META"
+  mv "$TMP_META" "$ART_DIR/execution_metadata.json"
+fi
+
+# --- Generate checksums for integrity verification ---
+echo "[capture] generating artifact checksums..."
+(cd "$ART_DIR" && sha256sum *.log *.html *.txt *.json 2>/dev/null > checksums.sha256 || true)
+
 # --- Write capture plan for convenience ---
 {
   echo "http://localhost:${PORT}/wf.html"
+  echo "http://localhost:${PORT}/index.html"
 } > "$CAPTURE_PLAN"
 
 echo "[capture] done. HTML log: $HTML"
+echo "[capture] Duration: ${DURATION}s"
 echo "[capture] open this in Chrome (forwarded port ${PORT}) for Hunchly capture."

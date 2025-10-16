@@ -1,0 +1,20 @@
+# Artifacts directories
+artifacts/
+artifacts-*/
+
+# Environment probe cache
+.env.probe
+
+# Temporary files
+*.pid
+*.log
+/tmp/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# System files
+.DS_Store
+Thumbs.db

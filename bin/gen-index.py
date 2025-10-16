@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, mimetypes, base64
+import os, mimetypes, base64, json
 from html import escape
 
 ART_DIR = os.environ.get("ART_DIR", "artifacts")
@@ -83,9 +83,57 @@ def main():
         label = "text" if is_text_file(mime) else (mime or "binary")
         links.append(f'<li><a href="{wrapper}">{name}</a> ({label}, {size} bytes)</li>')
 
+    # Load context information if available
+    context_summary = []
+    
+    # Execution metadata
+    exec_meta_path = os.path.join(ART_DIR, "execution_metadata.json")
+    if os.path.exists(exec_meta_path):
+        try:
+            with open(exec_meta_path) as f:
+                exec_meta = json.load(f)
+                context_summary.append(f"<strong>Workflow:</strong> {escape(exec_meta.get('workflow', 'unknown'))}<br>")
+                context_summary.append(f"<strong>Duration:</strong> {exec_meta.get('duration_seconds', 'unknown')}s<br>")
+                context_summary.append(f"<strong>Captured:</strong> {escape(exec_meta.get('capture_time', 'unknown'))}<br>")
+        except:
+            pass
+    
+    # Git context
+    git_ctx_path = os.path.join(ART_DIR, "git_context.json")
+    if os.path.exists(git_ctx_path):
+        try:
+            with open(git_ctx_path) as f:
+                git_ctx = json.load(f)
+                if 'error' not in git_ctx:
+                    context_summary.append(f"<strong>Commit:</strong> {escape(git_ctx.get('commit_short', 'unknown'))} ({escape(git_ctx.get('branch', 'unknown'))})<br>")
+                    context_summary.append(f"<strong>Author:</strong> {escape(git_ctx.get('author', 'unknown'))}<br>")
+        except:
+            pass
+    
+    # GitHub Actions context
+    gha_ctx_path = os.path.join(ART_DIR, "github_actions_context.json")
+    if os.path.exists(gha_ctx_path):
+        try:
+            with open(gha_ctx_path) as f:
+                gha_ctx = json.load(f)
+                context_summary.append(f"<strong>GitHub Actions Run:</strong> {escape(gha_ctx.get('run_id', 'unknown'))}<br>")
+                context_summary.append(f"<strong>Actor:</strong> {escape(gha_ctx.get('actor', 'unknown'))}<br>")
+        except:
+            pass
+    
     with open(INDEX_PATH, "w") as idx:
-        idx.write("<!doctype html><meta charset='utf-8'><body>"
-                  "<h1>Artifacts Index</h1><ul>")
+        idx.write("<!doctype html><meta charset='utf-8'>")
+        idx.write("<style>body{font-family:system-ui,sans-serif;margin:20px;max-width:1200px}")
+        idx.write(".context{background:#f5f5f5;padding:15px;margin:20px 0;border-left:4px solid #007bff}")
+        idx.write("ul{line-height:1.8}</style>")
+        idx.write("<body><h1>Artifacts Index</h1>")
+        
+        if context_summary:
+            idx.write("<div class='context'><h2>Context Summary</h2>")
+            idx.write("".join(context_summary))
+            idx.write("</div>")
+        
+        idx.write("<h2>Artifacts</h2><ul>")
         idx.write("".join(links))
         idx.write("</ul></body>")
     print(f"[index] wrote {INDEX_PATH} with {len(links)} entries")
