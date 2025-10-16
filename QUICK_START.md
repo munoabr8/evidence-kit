@@ -134,11 +134,13 @@ on: [push, pull_request]
 
 jobs:
   capture-evidence:
-    uses: munoabr8/evidence-kit/.github/workflows/reusable-action.yml@main
+    uses: your-org/evidence-kit/.github/workflows/reusable-action.yml@main
     with:
       workflow: tests
       port: 8009
 ```
+
+**Note**: Replace `your-org/evidence-kit` with the actual path to your evidence-kit repository (e.g., if you forked it, use `your-username/evidence-kit`).
 
 ## Viewing Evidence in Hunchly
 

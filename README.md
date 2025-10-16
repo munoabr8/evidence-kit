@@ -34,23 +34,33 @@ For standalone use, you may create a `Makefile` that includes `hunchly.mk`, but 
 
 ## Quick Start
 
-```bash
-# Basic evidence capture
-make -f hunchly.mk capture
+### Basic Evidence Capture
 
-# Generate index and view results
+Capture workflow execution with comprehensive context:
+
+```bash
+make -f hunchly.mk capture
+```
+
+### View Evidence Bundle
+
+Generate an HTML index and serve the artifacts:
+
+```bash
 make -f hunchly.mk artifacts-index
 make -f hunchly.mk serve
 # Open http://localhost:8009/index.html
 ```
 
-For detailed instructions, see [QUICK_START.md](QUICK_START.md).
+### Try the Complete Example
 
-To see a complete example with all features:
+See all context injection features in action:
 
 ```bash
 ./examples/enhanced-capture-example.sh
 ```
+
+For detailed instructions and advanced usage, see [QUICK_START.md](QUICK_START.md).
 
 ## Context Injection Strategies
 
