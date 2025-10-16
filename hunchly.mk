@@ -72,13 +72,13 @@ status: ## show ttyd status
 
 
 serve:
-	@pid=$$(lsof -t -i :$(HTTP_PORT)); \
-	if [ -n "$$pid" ]; then \
-		echo "[serve] killing existing process on port $(HTTP_PORT) (PID=$$pid)"; \
-		kill -9 $$pid; \
-	fi; \
-	mkdir -p artifacts; \
-	cd artifacts && python3 -m http.server $(HTTP_PORT)
-
-
+	@{ pids="$$(lsof -t -i :$(HTTP_PORT) 2>/dev/null)"; \
+	if [ -n "$$pids" ]; then \
+	  echo "killing $$pids on :$(HTTP_PORT)"; \
+	  kill $$pids || true; \
+	else 
+	  echo "no process on :$(HTTP_PORT)"; \
+	fi; }
+	@mkdir -p artifacts
+	@cd artifacts && python3 -m http.server $(HTTP_PORT)
  
