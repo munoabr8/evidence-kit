@@ -1,6 +1,23 @@
 # evidence-kit
 
 
+## Running Make Targets
+
+This repository uses `hunchly.mk` for its make targets. To run any target, use:
+
+```bash
+make -f hunchly.mk <target>
+```
+
+Replace `<target>` with the desired target (e.g., `capture`).
+
+### Note for Embedded Usage
+
+If you embed this repository as a submodule or within another project that has its own `Makefile`, do **not** add or rename a default `Makefile` here. Using a default `Makefile` may cause conflicts with the parent repository's build system.
+
+For standalone use, you may create a `Makefile` that includes `hunchly.mk`, but this is not recommended for embedded scenarios.
+
+
 
 Reusable Workflow Integration
 
