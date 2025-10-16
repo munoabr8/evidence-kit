@@ -34,27 +34,22 @@ For standalone use, you may create a `Makefile` that includes `hunchly.mk`, but 
 
 ## Quick Start
 
-### Basic Evidence Capture
-
 ```bash
-# Set up environment
-export ROOT="$(pwd)"
-export ART_DIR="$ROOT/artifacts"
-
-# Run a workflow and capture evidence
+# Basic evidence capture
 make -f hunchly.mk capture
+
+# Generate index and view results
+make -f hunchly.mk artifacts-index
+make -f hunchly.mk serve
+# Open http://localhost:8009/index.html
 ```
 
-### Enhanced Evidence Capture with Context
+For detailed instructions, see [QUICK_START.md](QUICK_START.md).
+
+To see a complete example with all features:
 
 ```bash
-# Try the example to see all context injection features
 ./examples/enhanced-capture-example.sh
-
-# View the generated evidence bundle
-cd artifacts-example
-python3 -m http.server 8009
-# Open http://localhost:8009/index.html
 ```
 
 ## Context Injection Strategies
@@ -85,3 +80,31 @@ Repository Roles
 Repository	Role
 evidence-kit	Defines the reusable workflow and core scripts (bin/run_and_capture.sh, bin/run-wf).
 Your other project	Calls the reusable workflow to execute its own build/test/CI pipelines and capture evidence artifacts.
+
+## Documentation
+
+- **[QUICK_START.md](QUICK_START.md)** - Step-by-step guide to get started quickly
+- **[CONTEXT_INJECTION_STRATEGIES.md](CONTEXT_INJECTION_STRATEGIES.md)** - Comprehensive guide to context injection strategies
+- **[examples/](examples/)** - Working examples demonstrating various features
+- **[bin/](bin/)** - Core scripts with inline documentation
+
+## Project Structure
+
+```
+evidence-kit/
+├── bin/                      # Core scripts
+│   ├── capture_context.sh    # Captures comprehensive context
+│   ├── run_and_capture.sh    # Main evidence capture workflow
+│   ├── run-wf                # Workflow executor
+│   ├── gen-index.py          # HTML index generator
+│   └── env_probe             # Environment detection utility
+├── examples/                 # Usage examples
+│   ├── enhanced-capture-example.sh
+│   └── README.md
+├── templates/                # GitHub Actions templates
+│   └── reusable-action.yml
+├── hunchly.mk               # Make targets
+├── README.md                # This file
+├── QUICK_START.md           # Quick start guide
+└── CONTEXT_INJECTION_STRATEGIES.md  # Strategy documentation
+```
