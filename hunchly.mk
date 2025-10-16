@@ -7,8 +7,7 @@ SHELL := /bin/bash
 
 
 
-.PHONY: setup live live-stop
-setup:
+ setup:
 	@command -v ttyd >/dev/null || (sudo apt-get update -y && sudo apt-get install -y ttyd)
 
 
@@ -37,12 +36,11 @@ capture: setup .env.probe
 artifacts-index:
 	@python3 bin/gen-index.py
 
-
+ 
 all:
-	@$(MAKE) capture
-	@$(MAKE) artifacts-index
-	@$(MAKE) serve
-
+	@$(MAKE) -f hunchly.mk capture
+	@$(MAKE) -f hunchly.mk artifacts-index
+	@$(MAKE) -f hunchly.mk serve
  
 check-probe:
 	@$(PROBE) --version >/dev/null || { echo "bad env_probe_proto" >&2; exit 1; }
@@ -72,13 +70,16 @@ status: ## show ttyd status
 
 
 serve:
-	@{ pids="$$(lsof -t -i :$(HTTP_PORT) 2>/dev/null)"; \
+	@pids="$$(lsof -t -i :$(HTTP_PORT) 2>/dev/null)"; \
 	if [ -n "$$pids" ]; then \
 	  echo "killing $$pids on :$(HTTP_PORT)"; \
 	  kill $$pids || true; \
-	else 
+	else \
 	  echo "no process on :$(HTTP_PORT)"; \
-	fi; }
-	@mkdir -p artifacts
-	@cd artifacts && python3 -m http.server $(HTTP_PORT)
- 
+	fi; \
+	mkdir -p artifacts; \
+	cd artifacts && python3 -m http.server $(HTTP_PORT)
+
+help:
+	@echo "Usage: make [target]"
+	@grep '^[a-zA-Z0-9_-]\+:' hunchly.mk || true
