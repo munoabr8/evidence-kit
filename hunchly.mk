@@ -9,7 +9,7 @@ SHELL := /bin/bash
 
  setup:
 	@command -v ttyd >/dev/null || (sudo apt-get update -y && sudo apt-get install -y ttyd)
-
+	@command -v asciinema >/dev/null || echo "asciinema not found; run 'make -f asciinema.mk asciinema-record' after installing asciinema to capture terminal sessions."
 
 
 live: setup
@@ -38,7 +38,7 @@ artifacts-index:
 
  
 all:
-	@$(MAKE) -f hunchly.mk capture
+	@$(MAKE) -f hunchly.mk captur
 	@$(MAKE) -f hunchly.mk artifacts-index
 	@$(MAKE) -f hunchly.mk serve
  

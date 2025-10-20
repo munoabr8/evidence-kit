@@ -1,0 +1,16 @@
+
+
+.env.probe
+
+artifacts/*
+
+# keep artifacts directory ignored by default, but allow these vendored files
+#!important: the following negations allow committing player assets and glue
+!artifacts/asciinema-player.min.js
+!artifacts/asciinema-player.min.css
+!artifacts/asciinema-glue.js
+!artifacts/index.html
+!artifacts/*.cast.html
+!artifacts/*.sha256
+
+.devcontainer/
