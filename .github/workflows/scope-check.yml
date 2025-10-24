@@ -1,0 +1,25 @@
+name: scope-check
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  scope-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies (none required)
+        run: |
+          python3 -V
+      - name: Run scope-check
+        run: |
+          python3 bin/scope_check.py

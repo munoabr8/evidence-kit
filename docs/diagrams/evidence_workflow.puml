@@ -1,0 +1,35 @@
+@startuml
+title evidence-kit workflow
+
+skinparam monochrome true
+
+actor Investigator
+entity "Capture Host" as Capture
+entity "evidence-kit (repo)" as Repo
+entity "Asciinema Player (JS/WASM)" as Player
+database "Hunchly Case / Preview" as Hunchly
+
+Capture --> Repo : produce `.cast` file
+Repo -> Repo : bin/embed_cast.py -> create `*.selfcontained.html`
+Repo -> Repo : bin/embed_cast_static.py -> create `*.static.html`
+Repo -> Repo : bin/package_for_hunchly.py -> bundle `*.hunchly.zip`
+
+Repo --> Hunchly : Attach `*.hunchly.zip`
+Hunchly --> Hunchly : export to MHTML (may strip JS/WASM)
+Hunchly --> Investigator : preview (often sanitized)
+
+Investigator -> Investigator : download `*.selfcontained.html`
+Investigator -> Player : open `*.selfcontained.html` in browser
+Player -> Investigator : interactive playback (if browser/wasm allowed)
+
+note left of Hunchly
+  Hunchly preview often
+  removes/excludes player JS/WASM
+  — use `*.static.html` for readable preview
+end note
+
+Repo -> Repo : bin/analyze_html_for_hunchly.py (diagnostics)
+Repo -> Repo : bin/contract_runner.py (enforce script contracts)
+Repo -> CI : add smoke checks / size guard (planned)
+
+@enduml

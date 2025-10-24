@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-import os, mimetypes, base64
+import os, mimetypes, base64, sys
 from html import escape
+# Ensure we can import the sibling `template.py` when running this script directly.
+sys.path.insert(0, os.path.dirname(__file__))
+from template import render_template
 
 ART_DIR = os.environ.get("ART_DIR", "artifacts")
 INDEX_PATH = os.path.join(ART_DIR, "index.html")
@@ -19,12 +22,10 @@ def make_wrapper(name, path, mime):
     m = mime or "application/octet-stream"
     size = os.path.getsize(path)
     with open(wp, "w") as dst:
-        dst.write("<!doctype html><meta charset='utf-8'><title>")
-        dst.write(escape(name))
-        dst.write("</title><body style='margin:16px;font-family:system-ui,Segoe UI,Arial,sans-serif'>")
-        dst.write(f"<h2>{escape(name)}</h2>\n")
-
-        # Special-case asciinema casts (.cast) — generate an asciinema-player
+        # Special-case asciinema casts (.cast) — render a standalone wrapper
+        # from the template (the template contains the full document). For
+        # non-cast artifacts we continue to write a simple document wrapper
+        # and embed the artifact content.
         if name.endswith('.cast'):
             # Prefer local vendored player files in artifacts/ when present
             local_js = os.path.join(ART_DIR, 'asciinema-player.min.js')
@@ -38,77 +39,75 @@ def make_wrapper(name, path, mime):
             else:
                 css = 'https://cdn.jsdelivr.net/npm/asciinema-player@3.11.1/dist/asciinema-player.min.css'
 
-            dst.write(f"<link rel='stylesheet' href='{css}'>\n")
-            dst.write(f"<script src='{js}'></script>\n")
+            # Render the cast wrapper from a template for readability.
+            tpl_path = os.path.join(os.path.dirname(__file__), '..', 'templates', 'cast_wrapper.html.tpl')
+            glue_js = ''
+            # Load glue JS from a separate template and write it to artifacts so
+            # wrappers can reference a centralized `asciinema-glue.js` (cacheable).
+            glue_tpl_path = os.path.join(os.path.dirname(__file__), '..', 'templates', 'cast_glue.js.tpl')
+            try:
+                with open(glue_tpl_path, 'r', encoding='utf-8') as gf:
+                    glue_js = gf.read()
+            except Exception:
+                glue_js = ''
 
-            # If the local vendored bundle is present it may not auto-register the
-            # <asciinema-player> custom element; try a few programmatic fallbacks
-            # before loading the CDN.
-            if js.startswith('./'):
-                glue_template = """<script>
-(function(){
-  function isRegistered(){ try{ return !!(window.customElements && window.customElements.get('asciinema-player')); }catch(e){return false;} }
-  function findFactoryGlobal(){
-    var names=['AsciinemaPlayer','asciinemaPlayer','Asciinema','asciinema','AsciinemaPlayerJS'];
-    for(var i=0;i<names.length;i++){ var f=window[names[i]]; if(f&&typeof f.create==='function') return f; }
-    try{ for(var k in window){ var v=window[k]; if(v&&typeof v.create==='function') return v; } }catch(e){}
-    return null;
-  }
-  async function tryEvalLocal(path){
-    try{
-      var resp = await fetch(path);
-      if(!resp.ok) return null;
-      var code = await resp.text();
-      try{
-        // attempt to evaluate the IIFE and capture its return value
-        var factory = (0,eval)('('+code+')');
-        if(factory && typeof factory.create==='function') return factory;
-      }catch(e){
-        try{ (0,eval)(code); }catch(e2){}
-      }
-    }catch(e){}
-    return null;
-  }
-  async function instantiate(){
-    if(isRegistered()) return;
-    var el = document.querySelector("asciinema-player[src='./{NAME}']");
-    if(!el) return;
-    try{
-      var factory = findFactoryGlobal();
-    if(factory){ try{ factory.create(el.getAttribute('src')||'./{NAME}', el, {preload:true}); return; }catch(e){ console.error('asciinema: factory.create failed',e); } }
-    }catch(e){}
-    try{
-      var factory2 = await tryEvalLocal('{JS}');
-      if(factory2 && typeof factory2.create==='function'){
-    try{ factory2.create(el.getAttribute('src')||'./{NAME}', el, {preload:true}); return; }catch(e){ console.error('asciinema: factory.create after eval failed', e); }
-      }
-    }catch(e){}
-    // final fallback: load CDN bundle
-    try{ var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/asciinema-player@3.11.1/dist/asciinema-player.min.js'; s.crossOrigin='anonymous'; s.async=true; document.head.appendChild(s); }catch(e){console.error('asciinema: failed to load CDN',e);} 
-  }
-  if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',function(){ setTimeout(instantiate,200); }); setTimeout(instantiate,600); } else instantiate();
-})();
-</script>"""
+            # If we have glue_js content, render it (substitute %%JS%%) and
+            # write a centralized artifacts/asciinema-glue.js file.
+            if glue_js:
+                glue_out = glue_js.replace('%%JS%%', js)
+                glue_path = os.path.join(ART_DIR, 'asciinema-glue.js')
+                try:
+                    with open(glue_path, 'w', encoding='utf-8') as go:
+                        go.write(glue_out)
+                except Exception:
+                    pass
+            # For backward compatibility keep the inline glue logic local-only when
+            # using a vendored JS file. The template will contain a placeholder
+            # where the glue JS will be inserted.
+            # If the vendored local JS exists, we will attempt the glue logic; if
+            # glue_js is empty the template will still render but without the
+            # programmatic fallback.
+            if not glue_js:
+                glue_js = ''
 
-                glue = glue_template.replace('{NAME}', name).replace('{JS}', js)
-                dst.write(glue)
+            # Substitute any placeholders inside the glue_js before rendering
+            # the template so tokens like %%JS%% are resolved. We still keep the
+            # local `glue_js` var for compatibility but wrappers will reference
+            # the centralized `asciinema-glue.js` we wrote above.
+            glue_js = glue_js.replace('%%JS%%', js).replace('%%CAST_SRC%%', f'./{name}')
 
-            dst.write(f"<asciinema-player src='./{name}' preload style='width:100%;height:80vh'></asciinema-player>\n")
-        elif is_text_file(m) and size <= EMBED_LIMIT:
-            with open(path, "r", errors="replace") as src:
-                dst.write("<pre>")
-                dst.write(escape(src.read()))
-                dst.write("</pre>")
-        elif size <= EMBED_LIMIT:
-            with open(path, "rb") as src:
-                b64 = base64.b64encode(src.read()).decode("ascii")
-            # iframe tends to avoid download prompts better than <object> in some setups
-            dst.write(f"<iframe src='data:{m};base64,{b64}' "
-                      f"style='width:100%;height:80vh;border:1px solid #ccc'></iframe>")
+            rendered = render_template(tpl_path, {
+                'TITLE': name,
+                'TITLE_ESC': escape(name),
+                'CSS': css,
+                'JS': js,
+                'GLUE_JS': glue_js,
+                'CAST_SRC': f'./{name}',
+            })
+            dst.write(rendered)
+            # The template contains a full document including the closing </body>,
+            # so return early to avoid appending another closing tag below.
+            return wrapper
         else:
-            # too large to embed: still avoid forced download by preview hint
-            dst.write(f"<p>File is large ({size} bytes). Open directly if needed: "
-                      f"<a href='{name}'>open {escape(name)}</a></p>")
+            dst.write("<!doctype html><meta charset='utf-8'><title>")
+            dst.write(escape(name))
+            dst.write("</title><body style='margin:16px;font-family:system-ui,Segoe UI,Arial,sans-serif'>")
+            dst.write(f"<h2>{escape(name)}</h2>\n")
+            if is_text_file(m) and size <= EMBED_LIMIT:
+                with open(path, "r", errors="replace") as src:
+                    dst.write("<pre>")
+                    dst.write(escape(src.read()))
+                    dst.write("</pre>")
+            elif size <= EMBED_LIMIT:
+                with open(path, "rb") as src:
+                    b64 = base64.b64encode(src.read()).decode("ascii")
+                # iframe tends to avoid download prompts better than <object> in some setups
+                dst.write(f"<iframe src='data:{m};base64,{b64}' "
+                          f"style='width:100%;height:80vh;border:1px solid #ccc'></iframe>")
+            else:
+                # too large to embed: still avoid forced download by preview hint
+                dst.write(f"<p>File is large ({size} bytes). Open directly if needed: "
+                          f"<a href='{name}'>open {escape(name)}</a></p>")
 
         dst.write("</body>")
     return wrapper

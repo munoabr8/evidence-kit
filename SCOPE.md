@@ -1,3 +1,12 @@
+This repository's responsibilities are intentionally small and focused. It exists to:
+
+- provide minimal scripts and Make targets to capture terminal evidence for Hunchly integration;
+- generate playback wrappers and a browsable index of captured artifacts (local-first, with CDN fallbacks for player assets);
+- include lightweight helper scripts to assist capture and reproducible playback.
+
+Anything outside these responsibilities — for example: hosting or building large binary bundles, running extensive CI pipelines, or adding unrelated tooling — must be explicitly approved and either added along with an updated vendor manifest or moved into a separate repository/module. The goal is to keep the repo easy to review, fast to clone, and predictable in behavior.
+
+Changes that add vendored binaries must include an entry in `artifacts/vendor-player.json` (or a corresponding manifest) containing the version, canonical source URL, local paths, and SHA256 checksums. CI will reject pull requests that add large binaries without a manifest entry.
 Project scope (evidence-kit)
 ================================
 
