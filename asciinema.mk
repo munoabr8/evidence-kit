@@ -11,6 +11,20 @@ ASCIINEMA_PLAYER_VERSION ?= 2.8.0
 ASCIINEMA_PLAYER_JS ?= artifacts/asciinema-player.min.js
 ASCIINEMA_PLAYER_CSS ?= artifacts/asciinema-player.min.css
 
+# vendor-player: download asciinema-player assets into artifacts/ atomically
+# Environment variables:
+#  ASCIINEMA_PLAYER_VERSION (default above)
+#  VENDOR_VERIFY=true  -> if set, and EXPECTED_JS_SHA / EXPECTED_CSS_SHA are provided, verify them
+#  EXPECTED_JS_SHA / EXPECTED_CSS_SHA -> optional expected sha256 hex strings to verify
+VENDOR_MANIFEST ?= artifacts/vendor-player.json
+
+.PHONY: vendor-player
+vendor-player:
+	@mkdir -p artifacts
+	@echo "[asciinema] vendor-player: v$(ASCIINEMA_PLAYER_VERSION) -> artifacts/"
+	@chmod +x bin/vendor-player.sh 2>/dev/null || true
+	@bin/vendor-player.sh $(ASCIINEMA_PLAYER_VERSION) $(ASCIINEMA_PLAYER_JS) $(ASCIINEMA_PLAYER_CSS) $(VENDOR_MANIFEST)
+
 .SILENT: asciinema-fetch-player
 asciinema-fetch-player:
 	@mkdir -p artifacts
@@ -73,6 +87,24 @@ asciinema-embed:
 		echo "no file: $(FILE)"; exit 1; \
 	fi
 
+.PHONY: asciinema-embed-selfcontained
+asciinema-embed-selfcontained:
+	@mkdir -p artifacts
+	@if [ -f "$(FILE)" ]; then \
+		BASENAME=$$(basename "$(FILE)"); \
+		OUT=artifacts/$${BASENAME}.selfcontained.html; \
+		command -v python3 >/dev/null || { echo "python3 not found"; exit 1; }; \
+		python3 bin/embed_cast.py "$(FILE)" "$$OUT"; \
+		echo "[asciinema] wrote $$OUT"; \
+	else \
+		echo "no file: $(FILE)"; exit 1; \
+	fi
+
+.PHONY: scope-check
+scope-check:
+	@command -v python3 >/dev/null || { echo "python3 not found"; exit 1; }
+	@python3 bin/scope_check.py
+
 # Record with ROOT and ART_DIR set to absolute paths so scripts that require
 # environment variables (like ./bin/run_and_capture.sh) don't fail when run
 # from the asciinema target. This is safe and non-breaking; it simply provides
@@ -84,3 +116,9 @@ asciinema-record-with-env:
 	@ROOT="$(abspath .)" ART_DIR="$(abspath artifacts)"; \
 	echo "[asciinema] recording with env: ROOT=$$ROOT ART_DIR=$$ART_DIR -> $(CAST_OUT)"; \
 	ROOT="$$ROOT" ART_DIR="$$ART_DIR" $(ASCIINEMA) rec -c "$(ASCIINEMA_CMD)" $(CAST_OUT)
+
+.PHONY: package-for-hunchly
+package-for-hunchly:
+	@mkdir -p artifacts
+	@command -v python3 >/dev/null || { echo "python3 not found"; exit 1; }
+	python3 bin/package_for_hunchly.py $(FILE)

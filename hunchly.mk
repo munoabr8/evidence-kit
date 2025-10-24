@@ -83,3 +83,29 @@ serve:
 help:
 	@echo "Usage: make [target]"
 	@grep '^[a-zA-Z0-9_-]\+:' hunchly.mk || true
+
+.PHONY: smoke-test
+smoke-test:
+	@echo "Running smoke-test: invoking ./bin/smoke_test.sh"
+	@mkdir -p artifacts
+	@./bin/smoke_test.sh
+
+.PHONY: asciinema-record
+asciinema-record:
+	@mkdir -p artifacts
+	@TARGET=$$TARGET; \
+	if [ -z "$$TARGET" ]; then \
+		echo "Usage: make -f hunchly.mk asciinema-record TARGET=<target>"; exit 1; \
+	fi; \
+	command -v asciinema >/dev/null || (echo "asciinema not found; install it first"; exit 1); \
+	# record the full terminal session of the requested target
+	ASCIICAST=artifacts/$$TARGET.cast; \
+	(asciinema rec --overwrite -q -c "make -f hunchly.mk $$TARGET" "$$ASCIICAST") || { echo "asciinema rec failed"; exit 1; }; \
+	# regenerate wrappers so the new cast gets a playable HTML
+	python3 bin/gen-index.py; \
+	echo "Wrote $$ASCIICAST and updated wrappers"
+
+.PHONY: vendor-player
+vendor-player:
+	@echo "Invoking asciinema.mk:vendor-player";
+	@$(MAKE) -f asciinema.mk vendor-player
