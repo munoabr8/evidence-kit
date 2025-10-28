@@ -1,0 +1,88 @@
+.
+├── artifacts
+│   ├── all.cast
+│   ├── asciinema-glue.js.html
+│   ├── asciinema-player.min.css.html
+│   ├── asciinema-player.min.js.html
+│   ├── capture_plan.txt
+│   ├── capture_plan.txt.html
+│   ├── exported.mhtml
+│   ├── exported.mhtml.html
+│   ├── smoke.cast
+│   ├── smoke.cast.html
+│   ├── vendor-player.json.html
+│   ├── wf.log
+│   ├── wf.log.html
+│   ├── wf.raw.log
+│   └── wf.raw.log.html
+├── artifacts-http.log
+├── asciinema.mk
+├── bin
+│   ├── analyze_html_for_hunchly.py
+│   ├── capture_setup.sh
+│   ├── contract_runner.py
+│   ├── embed_cast.py
+│   ├── embed_cast_static.py
+│   ├── env_probe
+│   ├── fetch-asciinema-player.sh
+│   ├── gen-index.py
+│   ├── inspect_mhtml.py
+│   ├── open-capture-manifest.sh
+│   ├── package_for_hunchly.py
+│   ├── probe_common.sh
+│   ├── probes
+│   │   ├── repo.sh
+│   │   └── vendor.sh
+│   ├── run_and_capture.sh
+│   ├── run-wf
+│   ├── scope_check.py
+│   ├── smoke_test.sh
+│   ├── template.py
+│   ├── vendor-player.sh
+│   └── verify_selfcontained.py
+├── ci
+│   └── README.md
+├── contract
+├── contrib
+│   └── README.md
+├── .devcontainer
+│   └── devcontainer.json
+├── docs
+│   ├── diagrams
+│   │   ├── evidence_workflow.puml
+│   │   └── README.md
+│   ├── README.md
+│   └── TREE.txt
+├── .env.probe
+├── examples
+│   └── README.md
+├── .gitattributes
+├── .github
+│   ├── PULL_REQUEST_TEMPLATE.md
+│   └── workflows
+│       └── scope-check.yml
+├── .gitignore
+├── hunchly.mk
+├── media-pack
+│   ├── assets
+│   └── player
+│       ├── asciinema-glue.js
+│       ├── asciinema-player.min.css
+│       ├── asciinema-player.min.js
+│       └── vendor-player.json
+├── .pre-commit-config.yaml
+├── README.md
+├── requirements-dev.txt
+├── SCOPE.md
+├── SCOPE_REPORT.md
+├── serve.pid
+├── templates
+│   ├── cast_glue.js.tpl
+│   ├── cast_wrapper.html.tpl
+│   └── reusable-action.yml
+├── tests
+│   └── test_gen_index.py
+└── vendor
+    └── README.md
+
+19 directories, 67 files
