@@ -1,4 +1,5 @@
 {
+  "_comment": "Manifest of vendored player assets. Do not add // comments; use this field or media-pack/player/README.md for notes.",
   "version": "3.11.1",
   "js": "media-pack/player/asciinema-player.min.js",
   "css": "media-pack/player/asciinema-player.min.css",
