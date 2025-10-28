@@ -38,7 +38,7 @@ artifacts-index:
 
  
 all:
-	@$(MAKE) -f hunchly.mk captur
+	@$(MAKE) -f hunchly.mk capture
 	@$(MAKE) -f hunchly.mk artifacts-index
 	@$(MAKE) -f hunchly.mk serve
  
