@@ -1,0 +1,39 @@
+name: smoke-test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  smoke:
+    name: Smoke test (make smoke-test)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Make scripts executable
+        run: |
+          chmod +x bin/*.sh || true
+          chmod +x bin/*.py || true
+
+      - name: Sync player assets (from media-pack -> artifacts)
+        run: make -f asciinema.mk sync-player
+
+      - name: Run smoke-test
+        run: make -f hunchly.mk smoke-test
+
+      - name: Upload artifacts directory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts
+          path: artifacts

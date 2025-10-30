@@ -20,7 +20,7 @@ live-stop:
 	@[ -f artifacts/ttyd.pid ] && kill $$(cat artifacts/ttyd.pid) && rm -f artifacts/ttyd.pid || echo "not running"
 
 MKDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-PROBE := $(MKDIR)bin/env_probe
+PROBE := $(MKDIR)bin/probes/env_probe
 
 .env.probe:
 	@'$(PROBE)' --print-env > $@ || { rm -f $@; exit 1; }
@@ -86,9 +86,9 @@ help:
 
 .PHONY: smoke-test
 smoke-test:
-	@echo "Running smoke-test: invoking ./bin/smoke_test.sh"
+	@echo "Running smoke-test: invoking ./tests/e2e/smoke_test.sh"
 	@mkdir -p artifacts
-	@./bin/smoke_test.sh
+	@./tests/e2e/smoke_test.sh
 
 .PHONY: asciinema-record
 asciinema-record:
