@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, mimetypes, base64, sys
+import os, mimetypes, base64, sys, shutil
 from html import escape
 # Ensure we can import the sibling `template.py` when running this script directly.
 sys.path.insert(0, os.path.dirname(__file__))
@@ -27,9 +27,27 @@ def make_wrapper(name, path, mime):
         # non-cast artifacts we continue to write a simple document wrapper
         # and embed the artifact content.
         if name.endswith('.cast'):
-            # Prefer local vendored player files in artifacts/ when present
+            # Prefer local vendored player files in artifacts/ when present.
+            # If the files exist under the old `media-pack/player/` layout (migration
+            # state), copy them into the artifacts dir so the local server (which
+            # serves from artifacts/) can serve them at ./asciinema-player.min.js
             local_js = os.path.join(ART_DIR, 'asciinema-player.min.js')
             local_css = os.path.join(ART_DIR, 'asciinema-player.min.css')
+            repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+            media_js = os.path.join(repo_root, 'media-pack', 'player', 'asciinema-player.min.js')
+            media_css = os.path.join(repo_root, 'media-pack', 'player', 'asciinema-player.min.css')
+
+            # If local artifact copies are missing but media-pack has them, copy them
+            # into ART_DIR so wrappers can reference them as ./asciinema-player.min.js
+            try:
+                if not os.path.isfile(local_js) and os.path.isfile(media_js):
+                    shutil.copyfile(media_js, local_js)
+                if not os.path.isfile(local_css) and os.path.isfile(media_css):
+                    shutil.copyfile(media_css, local_css)
+            except Exception:
+                # Best-effort; do not fail the index generation for copy errors.
+                pass
+
             if os.path.isfile(local_js):
                 js = './asciinema-player.min.js'
             else:
