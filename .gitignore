@@ -16,6 +16,7 @@ artifacts/*
 
 bin/run-wf
 tests/**
+!tests/e2e/**
 
 # Editor/dev container
 .devcontainer/
