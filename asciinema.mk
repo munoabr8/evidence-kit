@@ -7,7 +7,23 @@ FILE ?= $(CAST_OUT)
 .PHONY: asciinema-record asciinema-play asciinema-hash asciinema-upload asciinema-embed asciinema-record-with-env install
  
 .PHONY: asciinema-fetch-player
-ASCIINEMA_PLAYER_VERSION ?= 2.8.0
+
+# Prefer reading the canonical vendored version from media-pack/player/vendor-player.json
+# If jq is available, use it; otherwise fall back to a safe grep. If the manifest is missing
+# or parsing fails, fall back to the Makefile default (2.8.0).
+ASCIINEMA_PLAYER_VERSION_FROM_MANIFEST := $(shell \
+	MFILE=media-pack/player/vendor-player.json; \
+	if [ -f "$$MFILE" ]; then \
+		if command -v jq >/dev/null 2>&1; then \
+			jq -r '.version // empty' "$$MFILE"; \
+		else \
+			grep -oP '"version"\s*:\s*"\K[^"]+' "$$MFILE" 2>/dev/null || true; \
+		fi; \
+	fi)
+
+# Use the manifest-derived version when present, otherwise keep the historical default.
+ASCIINEMA_PLAYER_VERSION ?= $(if $(ASCIINEMA_PLAYER_VERSION_FROM_MANIFEST),$(ASCIINEMA_PLAYER_VERSION_FROM_MANIFEST),2.8.0)
+
 ASCIINEMA_PLAYER_JS ?= artifacts/asciinema-player.min.js
 ASCIINEMA_PLAYER_CSS ?= artifacts/asciinema-player.min.css
 
@@ -24,6 +40,18 @@ vendor-player:
 	@echo "[asciinema] vendor-player: v$(ASCIINEMA_PLAYER_VERSION) -> artifacts/"
 	@chmod +x bin/vendor-player.sh 2>/dev/null || true
 	@bin/vendor-player.sh $(ASCIINEMA_PLAYER_VERSION) $(ASCIINEMA_PLAYER_JS) $(ASCIINEMA_PLAYER_CSS) $(VENDOR_MANIFEST)
+
+.PHONY: sync-player
+sync-player:
+	@# Copy canonical media-pack player assets (if present) into artifacts/ for serving
+	@mkdir -p artifacts
+	@ROOT=$$(cd $(dir $(abspath $(lastword $(MAKEFILE_LIST)))) && pwd) || ROOT="."; \
+	MEDIA_JS="$$ROOT/media-pack/player/asciinema-player.min.js"; \
+	MEDIA_CSS="$$ROOT/media-pack/player/asciinema-player.min.css"; \
+	MEDIA_MAN="$$ROOT/media-pack/player/vendor-player.json"; \
+	if [ -f "$$MEDIA_JS" ]; then cp -f "$$MEDIA_JS" artifacts/asciinema-player.min.js && echo "[asciinema] synced $$MEDIA_JS -> artifacts/"; else echo "[asciinema] no media-pack JS to sync"; fi; \
+	if [ -f "$$MEDIA_CSS" ]; then cp -f "$$MEDIA_CSS" artifacts/asciinema-player.min.css && echo "[asciinema] synced $$MEDIA_CSS -> artifacts/"; else echo "[asciinema] no media-pack CSS to sync"; fi; \
+	if [ -f "$$MEDIA_MAN" ]; then cp -f "$$MEDIA_MAN" artifacts/vendor-player.json && echo "[asciinema] synced $$MEDIA_MAN -> artifacts/vendor-player.json"; else echo "[asciinema] no media-pack vendor manifest to sync"; fi
 
 .SILENT: asciinema-fetch-player
 asciinema-fetch-player:
