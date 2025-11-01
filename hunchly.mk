@@ -65,8 +65,23 @@ kill-ports:
 	done
 
 
-status: ## show ttyd status
-	@[ -f $(ART_DIR)/ttyd.pid ] && ps -o pid,cmd -p $$(cat $(ART_DIR)/ttyd.pid) || echo "[live] not running"
+status: ## show ttyd status and artifacts checks
+	@art_dir=$${ART_DIR:-artifacts}; \
+	if [ ! -d "$$art_dir" ]; then \
+	  echo "[status] artifacts dir missing: $$art_dir"; \
+	else \
+	  if [ -f "$$art_dir/ttyd.pid" ]; then \
+	    pid=$$(cat "$$art_dir/ttyd.pid"); \
+	    ps -o pid,cmd -p $$pid || echo "[live] ttyd pid $$pid not running"; \
+	  else \
+	    echo "[live] not running"; \
+	  fi; \
+	  if [ -f "$$art_dir/vendor-player.json" ]; then \
+	    echo "[vendor] vendor-player.json present"; \
+	  else \
+	    echo "[vendor] vendor-player.json missing (run 'make -f asciinema.mk vendor-player' or add vendor-player.json)"; \
+	  fi; \
+	fi
 
 
 serve:
@@ -102,7 +117,7 @@ asciinema-record:
 	ASCIICAST=artifacts/$$TARGET.cast; \
 	(asciinema rec --overwrite -q -c "make -f hunchly.mk $$TARGET" "$$ASCIICAST") || { echo "asciinema rec failed"; exit 1; }; \
 	# regenerate wrappers so the new cast gets a playable HTML
-	python3 bin/gen-index.py; \
+	#python3 bin/gen-index.py; \
 	echo "Wrote $$ASCIICAST and updated wrappers"
 
 .PHONY: vendor-player

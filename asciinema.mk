@@ -67,7 +67,7 @@ asciinema-fetch-player:
 install:
 	@sudo apt-get update && sudo apt-get install -y asciinema
 
-asciinema-record:
+asciinema-record2:
 	@command -v $(ASCIINEMA) >/dev/null || { echo "Install $(ASCIINEMA) to record (see README)"; exit 1; }
 	@mkdir -p artifacts
 	@echo "[asciinema] recording: $(ASCIINEMA_CMD) -> $(CAST_OUT)"
@@ -130,6 +130,22 @@ asciinema-embed-selfcontained:
 
 .PHONY: scope-check
 scope-check:
+	@command -v python3 >/dev/null || { echo "python3 not found"; exit 1; }
+	@python3 bin/scope_check.py
+
+.PHONY: populate-artifacts
+populate-artifacts: ## populate artifacts/ with required player files and wrappers
+	@mkdir -p artifacts
+	@echo "[asciinema] populate-artifacts: syncing local media-pack -> vendor download -> fetch fallback -> gen-index"
+	@$(MAKE) -s -f asciinema.mk sync-player || true
+	@$(MAKE) -s -f asciinema.mk vendor-player || true
+	@$(MAKE) -s -f asciinema.mk asciinema-fetch-player || true
+	@command -v python3 >/dev/null || true; \
+	python3 bin/gen-index.py || true
+	@echo "[asciinema] populate-artifacts: done"
+
+.PHONY: check-artifacts
+check-artifacts: ## run scope-check to verify large artifacts are present and checksummed
 	@command -v python3 >/dev/null || { echo "python3 not found"; exit 1; }
 	@python3 bin/scope_check.py
 

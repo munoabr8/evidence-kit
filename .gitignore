@@ -13,9 +13,7 @@ artifacts/*
 #!artifacts/*.sha256
 #!artifacts/vendor-player.json
 
-
 bin/run-wf
-tests/**
 
 # Editor/dev container
 .devcontainer/

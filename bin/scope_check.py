@@ -30,10 +30,16 @@ def sha256_of(path):
 
 def run_index():
     # Run gen-index.py and ensure it exits 0
+    if not os.path.isfile(GEN):
+        print(f"[scope-check] generator not found: {GEN}")
+        return False
     try:
         subprocess.check_call([sys.executable, GEN], cwd=ROOT)
     except subprocess.CalledProcessError as e:
         print(f"[scope-check] gen-index.py failed: {e}")
+        return False
+    except FileNotFoundError as e:
+        print(f"[scope-check] failed to execute generator: {e}")
         return False
     return True
 
@@ -49,12 +55,30 @@ def load_manifest():
 
 def check_vendor_manifest(manifest):
     # manifest is simple mapping used by existing vendor-player.json pattern
-    required = {}
     if not manifest:
+        # If there's no manifest, check whether there are any large files present.
         print(f"[scope-check] no manifest found at {MANIFEST}")
-        manifest = {}
+        failures = 0
+        for name in os.listdir(ART):
+            path = os.path.join(ART, name)
+            if not os.path.isfile(path):
+                continue
+            if name.endswith('.html'):
+                continue
+            size = os.path.getsize(path)
+            if size < SIZE_THRESHOLD:
+                continue
+            print(f"[scope-check] large file detected but no manifest present: {path} ({size} bytes). Add {MANIFEST} or reduce artifact sizes.")
+            failures += 1
+        if failures:
+            print(f"[scope-check] {failures} failure(s) detected (manifest missing)")
+            return False
+        print("[scope-check] OK (no large files and no manifest present)")
+        return True
+
     # Build expected mapping from manifest keys we care about
     # Support either flat keys (js, css) or a nested object in the future.
+    required = {}
     for k in ('js', 'css'):
         if k in manifest:
             # store paths relative to repo root for consistent comparison
@@ -97,6 +121,11 @@ def check_vendor_manifest(manifest):
 def main():
     if not run_index():
         sys.exit(2)
+    # Ensure artifacts directory exists (gen-index.py should create it).
+    if not os.path.isdir(ART):
+        print(f"[scope-check] artifacts directory missing: {ART}")
+        sys.exit(4)
+
     manifest = load_manifest()
     ok = check_vendor_manifest(manifest)
     sys.exit(0 if ok else 3)
