@@ -1,9 +1,8 @@
 {
-  "_comment": "Mirror manifest with media-pack paths",
   "version": "3.11.1",
   "js": "media-pack/player/asciinema-player.min.js",
   "css": "media-pack/player/asciinema-player.min.css",
   "js_sha256": "f193d712251f29fd1b51fbaaf136ec79b7b07433d0122118f9f1583369f17806",
   "css_sha256": "c9ab8b978c4547141eeb6131caefc5604df2ccd78e2f9076931d7691ba47f399",
-  "time": "2025-10-28T23:19:37Z"
+  "time": "2025-11-01T14:35:58Z"
 }
