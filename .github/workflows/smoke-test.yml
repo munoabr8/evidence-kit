@@ -28,7 +28,7 @@ jobs:
       - name: Sync player assets (from media-pack -> artifacts)
         run: make -f asciinema.mk sync-player
 
-      - name: Debug: list artifacts before smoke-test
+      - name: Debug list artifacts before smoke-test
         if: ${{ always() }}
         run: |
           echo "--- ls artifacts ---"; ls -la artifacts || true
