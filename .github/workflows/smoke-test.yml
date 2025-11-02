@@ -28,6 +28,14 @@ jobs:
       - name: Sync player assets (from media-pack -> artifacts)
         run: make -f asciinema.mk sync-player
 
+      - name: Debug: list artifacts before smoke-test
+        if: ${{ always() }}
+        run: |
+          echo "--- ls artifacts ---"; ls -la artifacts || true
+          echo "--- head vendor-player.json (if present) ---"; if [ -f artifacts/vendor-player.json ]; then cat artifacts/vendor-player.json || true; else echo "(missing)"; fi
+          echo "--- head asciinema-glue.js (if present) ---"; if [ -f artifacts/asciinema-glue.js ]; then sed -n '1,120p' artifacts/asciinema-glue.js || true; else echo "(missing)"; fi
+          echo "--- head asciinema-player.min.js (if present) ---"; if [ -f artifacts/asciinema-player.min.js ]; then head -c 512 artifacts/asciinema-player.min.js | sed -n '1,40p' || true; else echo "(missing)"; fi
+
       - name: Run smoke-test
         run: make -f hunchly.mk smoke-test
 
