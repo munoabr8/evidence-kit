@@ -4,15 +4,7 @@
 # Ignore artifacts by default (served/working copy)
 artifacts/*
 
-# Allow committing only these specific artifacts (runtime files & manifest)
-#!artifacts/asciinema-player.min.js
-#!artifacts/asciinema-player.min.css
-#!artifacts/asciinema-glue.js
-#!artifacts/index.html
-#!artifacts/*.cast.html
-#!artifacts/*.sha256
-#!artifacts/vendor-player.json
-
+# Ignore workflow runner script
 bin/run-wf
 
 # Editor/dev container

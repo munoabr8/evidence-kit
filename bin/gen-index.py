@@ -57,6 +57,10 @@ def make_wrapper(name, path, mime):
             else:
                 css = 'https://cdn.jsdelivr.net/npm/asciinema-player@3.11.1/dist/asciinema-player.min.css'
 
+
+
+
+
             # Render the cast wrapper from a template for readability.
             tpl_path = os.path.join(os.path.dirname(__file__), '..', 'templates', 'cast_wrapper.html.tpl')
             glue_js = ''
