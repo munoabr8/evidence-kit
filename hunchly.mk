@@ -115,17 +115,15 @@ smoke-test:
 .PHONY: asciinema-record
 asciinema-record:
 	@mkdir -p artifacts
-	@TARGET="$(TARGET)"; \
-	if [ -z "$$TARGET" ]; then \
+	@if [ -z "$(TARGET)" ]; then \
 		echo "Usage: make -f hunchly.mk asciinema-record TARGET=<target>"; exit 1; \
 	fi; \
 	command -v asciinema >/dev/null || (echo "asciinema not found; install it first"; exit 1); \
 	# record the full terminal session of the requested target
-	ASCIICAST=artifacts/$$TARGET.cast; \
-	(asciinema rec --overwrite -q -c "make -f hunchly.mk $$TARGET" "$$ASCIICAST") || { echo "asciinema rec failed"; exit 1; }; \
+	(asciinema rec --overwrite -q -c "make -f hunchly.mk $(TARGET)" "artifacts/$(TARGET).cast") || { echo "asciinema rec failed"; exit 1; }; \
 	# regenerate wrappers so the new cast gets a playable HTML
 	#python3 bin/gen-index.py; \
-	echo "Wrote $$ASCIICAST and updated wrappers"
+	echo "Wrote artifacts/$(TARGET).cast and updated wrappers"
 
 
  
