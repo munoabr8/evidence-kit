@@ -115,7 +115,7 @@ smoke-test:
 .PHONY: asciinema-record
 asciinema-record:
 	@mkdir -p artifacts
-	@TARGET=$$TARGET; \
+	@TARGET="$(TARGET)"; \
 	if [ -z "$$TARGET" ]; then \
 		echo "Usage: make -f hunchly.mk asciinema-record TARGET=<target>"; exit 1; \
 	fi; \
@@ -128,11 +128,7 @@ asciinema-record:
 	echo "Wrote $$ASCIICAST and updated wrappers"
 
 
-lfs-evidence:
-
-	@./tests/e2e/smoke_test.sh
-
-
+ 
 .PHONY: vendor-player
 vendor-player:
 	@echo "Invoking asciinema.mk:vendor-player";
