@@ -7,7 +7,7 @@ SHELL := /bin/bash
 
 
 
- setup:
+setup:
 	@command -v ttyd >/dev/null || (sudo apt-get update -y && sudo apt-get install -y ttyd)
 	@command -v asciinema >/dev/null || echo "asciinema not found; run 'make -f asciinema.mk asciinema-record' after installing asciinema to capture terminal sessions."
 
@@ -99,6 +99,13 @@ help:
 	@echo "Usage: make [target]"
 	@grep '^[a-zA-Z0-9_-]\+:' hunchly.mk || true
 
+
+.PHONY: prepare-evidence
+prepare-evidence: ## Prepare evidence output dir (EVID; default /tmp/lfs-evidence)
+	@EVID=$${EVID:-/tmp/lfs-evidence}; \
+	echo "[evidence] ensuring $$EVID exists"; \
+	mkdir -p "$$EVID"; chmod 0755 "$$EVID" || true
+
 .PHONY: smoke-test
 smoke-test:
 	@echo "Running smoke-test: invoking ./tests/e2e/smoke_test.sh"
@@ -119,6 +126,12 @@ asciinema-record:
 	# regenerate wrappers so the new cast gets a playable HTML
 	#python3 bin/gen-index.py; \
 	echo "Wrote $$ASCIICAST and updated wrappers"
+
+
+lfs-evidence:
+
+	@./tests/e2e/smoke_test.sh
+
 
 .PHONY: vendor-player
 vendor-player:
