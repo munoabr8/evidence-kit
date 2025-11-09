@@ -86,9 +86,9 @@ help:
 
 .PHONY: smoke-test
 smoke-test:
-	@echo "Running smoke-test: invoking ./tests/e2e/smoke_test.sh"
+	@echo "Running smoke-test: invoking ./bin/smoke_test.sh"
 	@mkdir -p artifacts
-	@./tests/e2e/smoke_test.sh
+	@./bin/smoke_test.sh
 
 .PHONY: asciinema-record
 asciinema-record:
