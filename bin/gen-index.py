@@ -146,17 +146,14 @@ def main():
         if os.path.isfile(path) and not name.endswith('.html'):
             artifact_names.add(name)
 
-    # Step 2: Remove obsolete .html wrapper files (excluding index.html)
-    for name in os.listdir(ART_DIR):
-        if name.endswith('.html') and name != 'index.html':
-            # Only keep wrappers for current artifacts
-            base = name[:-5]  # remove .html
-            if base not in artifact_names:
-                try:
-                    os.remove(os.path.join(ART_DIR, name))
-                    print(f"[index] removed obsolete wrapper: {name}")
-                except Exception as e:
-                    print(f"[index] failed to remove {name}: {e}")
+    # NOTE: Historically we removed obsolete .html wrappers here, but that
+    # prevented pre-rendered or self-contained HTML artifacts (for example
+    # `foo.cast.selfcontained.html` or manually-generated `collect-lfs-evidence.html`)
+    # from being visible in the index. To make the index more discoverable and
+    # avoid surprising deletions, do not remove existing `.html` files here.
+    #
+    # If you want automatic cleanup of stale wrappers, add a separate maintenance
+    # step or a marker inside generated files to identify and remove old ones.
 
     links = []
     for name in sorted(os.listdir(ART_DIR)):
