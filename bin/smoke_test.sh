@@ -31,6 +31,78 @@ fi
 # regenerate wrappers
 python3 bin/gen-index.py
 
+# Early invariants check: verify required files exist and basic sanity before starting server.
+# If STRICT_INVARIANTS=true, fail early; otherwise emit warnings so CI logs are clearer.
+check_invariants() {
+  local strict=${STRICT_INVARIANTS:-false}
+  local ok=0
+  echo "[smoke-test] verifying required artifact invariants (STRICT_INVARIANTS=${strict})"
+
+  # wrapper exists
+  if [ ! -f "artifacts/${TARGET}.cast.html" ]; then
+    echo "[invariant] MISSING: artifacts/${TARGET}.cast.html"
+    ok=1
+  else
+    echo "[invariant] OK: artifacts/${TARGET}.cast.html"
+  fi
+
+  # glue
+  if [ ! -f "artifacts/asciinema-glue.js" ]; then
+    echo "[invariant] MISSING: artifacts/asciinema-glue.js"
+    ok=1
+  else
+    echo "[invariant] OK: artifacts/asciinema-glue.js"
+  fi
+
+  # player JS
+  if [ ! -f "artifacts/asciinema-player.min.js" ]; then
+    echo "[invariant] MISSING: artifacts/asciinema-player.min.js"
+    ok=1
+  else
+    sz=$(( $(wc -c < artifacts/asciinema-player.min.js) ))
+    echo "[invariant] OK: artifacts/asciinema-player.min.js (${sz} bytes)"
+    if [ "$sz" -lt "${MIN_JS_BYTES:-10240}" ]; then
+      echo "[invariant] WARNING: asciinema-player.min.js smaller than MIN_JS_BYTES=${MIN_JS_BYTES:-10240}"
+      ok=1
+    fi
+  fi
+
+  # vendor manifest (if present) must be parseable and have required keys
+  if [ -f "artifacts/vendor-player.json" ]; then
+    if ! python3 - <<PYERR >/dev/null 2>&1
+import json,sys
+try:
+    with open('artifacts/vendor-player.json') as f:
+        j=json.load(f)
+    assert 'version' in j and 'js' in j and 'css' in j
+except Exception as e:
+    print('bad manifest', e, file=sys.stderr); sys.exit(2)
+PYERR
+    then
+      echo "[invariant] BAD: artifacts/vendor-player.json is invalid JSON or missing keys"
+      ok=1
+    else
+      echo "[invariant] OK: artifacts/vendor-player.json"
+    fi
+  else
+    echo "[invariant] NOTE: artifacts/vendor-player.json not present (optional)"
+  fi
+
+  if [ "$ok" -ne 0 ]; then
+    if [ "$strict" = "true" ]; then
+      echo "[smoke-test] invariant check FAILED (strict); aborting"
+      dump_diagnostics || true
+      exit 2
+    else
+      echo "[smoke-test] invariant check reported issues (non-strict mode): continuing but CI may fail later"
+    fi
+  else
+    echo "[smoke-test] all quick invariants OK"
+  fi
+}
+
+check_invariants
+
 # assert outputs exist
 if [ ! -f "${ASCIICAST}" ] || [ ! -f "artifacts/${TARGET}.cast.html" ]; then
   echo "smoke-test: FAILED - missing cast or wrapper"; ls -la artifacts || true; exit 2
