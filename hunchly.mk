@@ -90,6 +90,8 @@ smoke-test:
 	@mkdir -p artifacts
 	@./bin/smoke_test.sh
 
+	
+
 .PHONY: asciinema-record
 asciinema-record:
 	@mkdir -p artifacts
