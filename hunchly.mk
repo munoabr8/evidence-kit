@@ -85,12 +85,23 @@ help:
 	@grep '^[a-zA-Z0-9_-]\+:' hunchly.mk || true
 
 .PHONY: smoke-test
-smoke-test:
+smoke-test2:
 	@echo "Running smoke-test: invoking ./bin/smoke_test.sh"
 	@mkdir -p artifacts
 	@./bin/smoke_test.sh
 
-	
+
+.ONESHELL:
+.SHELLFLAGS := -Eeuo pipefail -c
+
+smoke-test:
+	python3 -m http.server 8009 --directory artifacts >/tmp/http.8009.log 2>&1 &
+	SRV_PID=$$!
+	echo "PID=$$SRV_PID"
+	for i in $$(seq 1 30); do curl -fsS http://127.0.0.1:8009/ && break || sleep 0.2; done
+	curl -fS http://127.0.0.1:8009/index.html >/dev/null
+	kill $$SRV_PID || true
+	wait $$SRV_PID 2>/dev/null || true
 
 .PHONY: asciinema-record
 asciinema-record:

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -Eeuo pipefail
+trap 'rc=$?; echo "smoke_test.sh failed rc=$rc"; sed -n "1,200p" /tmp/http.$PORT.log || true; exit $rc' ERR
+
 
 # On error, emit diagnostics to help CI logs (artifact listing and server headers)
 dump_diagnostics() {
@@ -119,23 +121,24 @@ sleep 0.3
 echo "smoke-test: HTTP server started (PID=${SERVER_PID}, port=${PORT})"
 
 # helper to check headers
+ 
 check_header(){
-  local path="$1" expected_ct="$2"
+  local path="$1" ; local want="$2"   # want is a regex
   local hdr
-  hdr=$(curl -s -I "http://127.0.0.1:${PORT}/${path}" | tr -d '\r' ) || return 1
+  hdr=$(curl -s -I "http://127.0.0.1:${PORT}/${path}" | tr -d '\r') || return 1
   echo "--- headers for ${path} ---"
   echo "$hdr"
-  if ! echo "$hdr" | grep -i "Content-type: ${expected_ct}" >/dev/null; then
-    echo "smoke-test: FAILED - ${path} not served as ${expected_ct}"; return 2
-  fi
-  return 0
+  echo "$hdr" | grep -iqE "Content-Type:\s*(${want})" || {
+    echo "smoke-test: FAILED - ${path} wrong content-type"; return 2; }
 }
 
 # Verify wrappers and assets are served with correct content-types
-check_header "${TARGET}.cast.html" "text/html" || { kill ${SERVER_PID} || true; exit 2; }
-check_header "asciinema-glue.js" "text/javascript" || { kill ${SERVER_PID} || true; exit 2; }
-check_header "asciinema-player.min.js" "text/javascript" || { kill ${SERVER_PID} || true; exit 2; }
 
+check_header "${TARGET}.cast.html" "text/html"
+check_header "asciinema-glue.js" "(application|text)/javascript"
+check_header "asciinema-player.min.js" "(application|text)/javascript"
+
+ 
 # Invariants to validate (strict checks)
 # 1) vendor manifest exists and has version/js/css/js_sha256/css_sha256 fields (if present)
 # 2) asciinema-player.min.js is >= MIN_JS_BYTES
