@@ -1,4 +1,4 @@
-# gen-index-ctx.py  (or keep in the same module)
+# gen_index_ctx.py  (or keep in the same module)
 # module-scoped will need to eventually -> context class
 from pathlib import Path
 
