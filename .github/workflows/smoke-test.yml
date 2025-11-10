@@ -27,7 +27,21 @@ jobs:
 
       - name: Sync player assets (from media-pack -> artifacts)
         run: make -f asciinema.mk sync-player
-        
+
+      - name: Debug artifacts (before smoke)
+        run: |
+          echo "ARTIFACTS LISTING:";
+          ls -la artifacts || true;
+          echo "index.html head:";
+          head -n 60 artifacts/index.html || true;
+          echo "asciinema-glue.js head:";
+          head -n 60 artifacts/asciinema-glue.js || true;
+          echo "asciinema-player.min.js size and head:";
+          wc -c artifacts/asciinema-player.min.js || true;
+          head -n 20 artifacts/asciinema-player.min.js || true;
+          echo "smoke wrapper head:";
+          head -n 120 artifacts/smoke.cast.html || true
+
       - name: Run smoke-test
         env:
           STRICT_INVARIANTS: 'true'
