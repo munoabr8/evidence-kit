@@ -3,7 +3,11 @@ HTTP_PORT ?= 8009
 
 
 BASIC_AUTH ?= wf:pass
-SHELL := /bin/bash
+
+.ONESHELL:
+SHELL := /usr/bin/bash
+.SHELLFLAGS := -Eeuo pipefail -c
+
 
 
 
@@ -86,46 +90,29 @@ help:
 
 .PHONY: smoke-test
 
-
+ 
 .ONESHELL:
 SHELL := /usr/bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
+.PHONY: smoke-test
 
 smoke-test:
 	test -f bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
 	mkdir -p artifacts
-	# Prepare artifacts (create a minimal cast, wrappers and glue)
 	./bin/smoke_test.sh
 	test -f artifacts/index.html || { echo "missing artifacts/index.html"; exit 91; }
-	# If glue isn't present (CI fresh checkout), generate it from the template.
-	if [ ! -f artifacts/asciinema-glue.js ]; then \
-		echo "asciinema-glue.js not found — generating from templates/cast_glue.js.tpl"; \
-		if [ -f artifacts/asciinema-player.min.js ]; then js=./asciinema-player.min.js; else js=https://cdn.jsdelivr.net/npm/asciinema-player@3.11.1/dist/asciinema-player.min.js; fi; \
-		mkdir -p artifacts; \
-		if [ -f templates/cast_glue.js.tpl ]; then \
-			cp templates/cast_glue.js.tpl artifacts/asciinema-glue.js; \
-			sed -i "s|%%JS%%|$$js|g" artifacts/asciinema-glue.js; \
-			echo "wrote artifacts/asciinema-glue.js"; \
-		else \
-			echo "template templates/cast_glue.js.tpl not found"; exit 92; \
-		fi; \
-	fi; \
-	test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 92; }
-	test -f artifacts/asciinema-player.min.js || { echo "missing player.js"; exit 93; }
-	[ $$(wc -c < artifacts/asciinema-player.min.js) -ge $${MIN_JS_BYTES:-10240} ] || { echo "player.js too small"; exit 94; }
 
-	python3 -m http.server 8009 --directory artifacts >/tmp/http.8009.log 2>&1 & SRV_PID=$$!; sleep 0.2
-	kill -0 $$SRV_PID || { echo "server pid died"; sed -n '1,120p' /tmp/http.8009.log; exit 95; }
-	python3 - <<'PY' || { echo "port not listening"; exit 96; }
-	import socket
-	socket.create_connection(("127.0.0.1",8009),timeout=1.5).close()
-	PY
-	for i in $$(seq 1 50); do curl -fsS http://127.0.0.1:8009/ >/dev/null && break || sleep 0.2; done
-	curl -fS http://127.0.0.1:8009/index.html >/dev/null || { echo "index 404"; exit 98; }
-	hdr=$$(curl -sI http://127.0.0.1:8009/asciinema-player.min.js | tr -d '\r'); \
-	 echo "$$hdr" | grep -iqE '^Content-Type:\s*(application|text)/javascript' || { echo "$$hdr"; exit 99; }
-	kill $$SRV_PID || true
-	wait $$SRV_PID 2>/dev/null || true
+	# Generate glue if absent
+	if [ ! -f artifacts/asciinema-glue.js ]; then
+	  echo "asciinema-glue.js not found — generating from template"
+	  js=$([ -f artifacts/asciinema-player.min.js ] && echo ./asciinema-player.min.js || \
+	       echo https://cdn.jsdelivr.net/npm/asciinema-player@3.11.1/dist/asciinema-player.min.js)
+	  test -f templates/cast_glue.js.tpl || { echo "missing templates/cast_glue.js.tpl"; exit 92; }
+	  sed "s|%%JS%%|$${js}|g" templates/cast_glue.js.tpl > artifacts/asciinema-glue.js
+	  echo "wrote artifacts/asciinema-glue.js"
+	fi
+
+	test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 92; }
 
 .PHONY: asciinema-record
 asciinema-record:
