@@ -107,9 +107,9 @@ smoke-test:
 	python3 -m http.server 8009 --directory artifacts >/tmp/http.8009.log 2>&1 & SRV_PID=$$!; sleep 0.2
 	kill -0 $$SRV_PID || { echo "server pid died"; sed -n '1,120p' /tmp/http.8009.log; exit 95; }
 	python3 - <<'PY' || { echo "port not listening"; exit 96; }
-import socket
-socket.create_connection(("127.0.0.1",8009),timeout=1.5).close()
-PY
+	import socket
+	socket.create_connection(("127.0.0.1",8009),timeout=1.5).close()
+	PY
 	for i in $$(seq 1 50); do curl -fsS http://127.0.0.1:8009/ >/dev/null && break || sleep 0.2; done
 	curl -fS http://127.0.0.1:8009/index.html >/dev/null || { echo "index 404"; exit 98; }
 	hdr=$$(curl -sI http://127.0.0.1:8009/asciinema-player.min.js | tr -d '\r'); \
