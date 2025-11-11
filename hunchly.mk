@@ -8,13 +8,7 @@ BASIC_AUTH ?= wf:pass
 SHELL := /usr/bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 
-
-.ONESHELL:
-SHELL := /usr/bin/bash
-.SHELLFLAGS := -Eeuo pipefail -c
-
-
-
+ 
 
  setup:
 	@command -v ttyd >/dev/null || (sudo apt-get update -y && sudo apt-get install -y ttyd)
@@ -96,10 +90,7 @@ help:
 .PHONY: smoke-test
 
  
-.ONESHELL:
-SHELL := /usr/bin/bash
-.SHELLFLAGS := -Eeuo pipefail -c
-.PHONY: smoke-test
+ 
 
 smoke-test:
 	test -f bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
