@@ -96,30 +96,26 @@ SHELL := /usr/bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 
 smoke-test:
-	# Ensure artifacts and index exist
+	test -f bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
 	mkdir -p artifacts
 	python3 bin/gen-index.py || true
-	[ -f artifacts/index.html ] || echo "<!doctype html><title>stub</title>" > artifacts/index.html
+	test -f artifacts/index.html || { echo "missing artifacts/index.html"; exit 91; }
+	test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 92; }
+	test -f artifacts/asciinema-player.min.js || { echo "missing player.js"; exit 93; }
+	[ $$(wc -c < artifacts/asciinema-player.min.js) -ge $${MIN_JS_BYTES:-10240} ] || { echo "player.js too small"; exit 94; }
 
-	# Start server and wait until ready
-	python3 -m http.server 8009 --directory artifacts >/tmp/http.8009.log 2>&1 &
-	SRV_PID=$$!
-	echo "PID=$$SRV_PID"
-
-	for i in $$(seq 1 50); do
-		curl -fsS http://127.0.0.1:8009/ >/dev/null && break || sleep 0.2
-	done
-
-	# Probe a file that actually exists
-	curl -fS http://127.0.0.1:8009/index.html >/dev/null || {
-		echo "index.html missing or not served"; exit 22; }
-
-	# Optional: also assert a JS asset you know exists
-	curl -fS http://127.0.0.1:8009/asciinema-player.min.js >/dev/null
-
+	python3 -m http.server 8009 --directory artifacts >/tmp/http.8009.log 2>&1 & SRV_PID=$$!; sleep 0.2
+	kill -0 $$SRV_PID || { echo "server pid died"; sed -n '1,120p' /tmp/http.8009.log; exit 95; }
+	python3 - <<'PY' || { echo "port not listening"; exit 96; }
+import socket
+socket.create_connection(("127.0.0.1",8009),timeout=1.5).close()
+PY
+	for i in $$(seq 1 50); do curl -fsS http://127.0.0.1:8009/ >/dev/null && break || sleep 0.2; done
+	curl -fS http://127.0.0.1:8009/index.html >/dev/null || { echo "index 404"; exit 98; }
+	hdr=$$(curl -sI http://127.0.0.1:8009/asciinema-player.min.js | tr -d '\r'); \
+	 echo "$$hdr" | grep -iqE '^Content-Type:\s*(application|text)/javascript' || { echo "$$hdr"; exit 99; }
 	kill $$SRV_PID || true
 	wait $$SRV_PID 2>/dev/null || true
-
 
 .PHONY: asciinema-record
 asciinema-record:

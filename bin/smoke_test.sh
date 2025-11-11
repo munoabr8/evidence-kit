@@ -3,6 +3,19 @@ set -Eeuo pipefail
 trap 'rc=$?; echo "smoke_test.sh failed rc=$rc"; sed -n "1,200p" /tmp/http.$PORT.log || true; exit $rc' ERR
 
 
+preflight_asserts() {
+  test -f bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
+  mkdir -p artifacts
+  python3 bin/gen-index.py || true
+  test -f artifacts/index.html || { echo "missing artifacts/index.html"; exit 91; }
+  test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 92; }
+  test -f artifacts/asciinema-player.min.js || { echo "missing player.js"; exit 93; }
+  [ "$(wc -c < artifacts/asciinema-player.min.js)" -ge "${MIN_JS_BYTES:-10240}" ] || { echo "player.js too small"; exit 94; }
+}
+
+preflight_asserts
+
+
 # On error, emit diagnostics to help CI logs (artifact listing and server headers)
 dump_diagnostics() {
   echo "--- SMOKE TEST DIAGNOSTICS ---"
