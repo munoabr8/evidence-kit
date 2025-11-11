@@ -85,10 +85,6 @@ help:
 	@grep '^[a-zA-Z0-9_-]\+:' hunchly.mk || true
 
 .PHONY: smoke-test
-smoke-test2:
-	@echo "Running smoke-test: invoking ./bin/smoke_test.sh"
-	@mkdir -p artifacts
-	@./bin/smoke_test.sh
 
 
 .ONESHELL:
@@ -114,6 +110,7 @@ smoke-test:
 	curl -fS http://127.0.0.1:8009/index.html >/dev/null || { echo "index 404"; exit 98; }
 	hdr=$$(curl -sI http://127.0.0.1:8009/asciinema-player.min.js | tr -d '\r'); \
 	 echo "$$hdr" | grep -iqE '^Content-Type:\s*(application|text)/javascript' || { echo "$$hdr"; exit 99; }
+	SKIP_SERVER=1 ./bin/smoke_test.sh
 	kill $$SRV_PID || true
 	wait $$SRV_PID 2>/dev/null || true
 

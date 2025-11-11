@@ -125,13 +125,18 @@ fi
 
 # Start a temporary HTTP server on a random free port and capture its PID
 pushd artifacts >/dev/null
-PORT=8009
-python3 -m http.server ${PORT} &
-SERVER_PID=$!
+# allow caller to override PORT and to tell this script not to start a server
+PORT=${PORT:-8009}
+if [ -n "${SKIP_SERVER:-}" ]; then
+  echo "smoke-test: SKIP_SERVER set - not starting HTTP server; assuming external server on port ${PORT}"
+  SERVER_PID=""
+else
+  python3 -m http.server ${PORT} &
+  SERVER_PID=$!
+  sleep 0.3
+  echo "smoke-test: HTTP server started (PID=${SERVER_PID}, port=${PORT})"
+fi
 popd >/dev/null
-sleep 0.3
-
-echo "smoke-test: HTTP server started (PID=${SERVER_PID}, port=${PORT})"
 
 # helper to check headers
  
@@ -163,7 +168,7 @@ MIN_JS_BYTES=${MIN_JS_BYTES:-10240} # default 10KB
 GLUE_MARKER=${GLUE_MARKER:-"Centralized glue"}
 VENDOR_MANIFEST=artifacts/vendor-player.json
 
-if [ -f "$VENDOR_MANIFEST" ]; then
+  if [ -f "$VENDOR_MANIFEST" ]; then
   # quick JSON sanity check for required keys
   if ! python3 - <<PYERR >/dev/null 2>&1
 import json,sys
@@ -175,15 +180,19 @@ except Exception as e:
     print('bad manifest', e, file=sys.stderr); sys.exit(2)
 PYERR
   then
-    echo "smoke-test: FAILED - vendor manifest $VENDOR_MANIFEST is invalid"; kill ${SERVER_PID} || true; exit 2
+    echo "smoke-test: FAILED - vendor manifest $VENDOR_MANIFEST is invalid"
+    if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
+    exit 2
   fi
 fi
 
 # check JS size
-if [ -f "artifacts/asciinema-player.min.js" ]; then
+  if [ -f "artifacts/asciinema-player.min.js" ]; then
   sz=$(( $(wc -c < artifacts/asciinema-player.min.js) ))
   if [ "$sz" -lt "$MIN_JS_BYTES" ]; then
-    echo "smoke-test: FAILED - asciinema-player.min.js too small (${sz} bytes)"; kill ${SERVER_PID} || true; exit 2
+    echo "smoke-test: FAILED - asciinema-player.min.js too small (${sz} bytes)"
+    if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
+    exit 2
   fi
 else
   echo "smoke-test: WARNING - asciinema-player.min.js missing; wrappers may fall back to CDN"
@@ -191,15 +200,21 @@ fi
 
 # check glue marker
 if ! grep -q "$GLUE_MARKER" artifacts/asciinema-glue.js 2>/dev/null; then
-  echo "smoke-test: FAILED - asciinema-glue.js missing expected marker '$GLUE_MARKER'"; kill ${SERVER_PID} || true; exit 2
+  echo "smoke-test: FAILED - asciinema-glue.js missing expected marker '$GLUE_MARKER'"
+  if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
+  exit 2
 fi
 
 # check wrapper HTML content
 if ! grep -q "<asciinema-player" "artifacts/${TARGET}.cast.html" 2>/dev/null; then
-  echo "smoke-test: FAILED - wrapper missing <asciinema-player> element"; kill ${SERVER_PID} || true; exit 2
+  echo "smoke-test: FAILED - wrapper missing <asciinema-player> element"
+  if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
+  exit 2
 fi
 if ! grep -q "asciinema-glue.js" "artifacts/${TARGET}.cast.html" 2>/dev/null; then
-  echo "smoke-test: FAILED - wrapper does not reference asciinema-glue.js"; kill ${SERVER_PID} || true; exit 2
+  echo "smoke-test: FAILED - wrapper does not reference asciinema-glue.js"
+  if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
+  exit 2
 fi
 
 # Compute or verify sha256 sums for casts; write if missing
@@ -210,7 +225,9 @@ for c in *.cast; do
   if [ -f "$sumfile" ]; then
     expected=$(cut -d' ' -f1 "$sumfile" || true)
     if [ "$expected" != "$sha" ]; then
-      echo "smoke-test: FAILED - checksum mismatch for $c"; kill ${SERVER_PID} || true; exit 2
+      echo "smoke-test: FAILED - checksum mismatch for $c"
+      if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
+      exit 2
     fi
   else
     # In CI we permit auto-generating checksum files to avoid brittle failures
@@ -218,14 +235,18 @@ for c in *.cast; do
       echo "$sha  $c" > "$sumfile"
       echo "smoke-test: wrote $sumfile"
     else
-      echo "smoke-test: FAILED - missing checksum file $sumfile (set ALLOW_GENERATE_SHA=true to auto-write)"; kill ${SERVER_PID} || true; exit 2
+      echo "smoke-test: FAILED - missing checksum file $sumfile (set ALLOW_GENERATE_SHA=true to auto-write)"
+      if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
+      exit 2
     fi
   fi
 done
 
 # shutdown server
-kill ${SERVER_PID} || true
-wait ${SERVER_PID} 2>/dev/null || true
+if [ -n "${SERVER_PID:-}" ]; then
+  kill ${SERVER_PID} || true
+  wait ${SERVER_PID} 2>/dev/null || true
+fi
 
 echo "smoke-test: OK"
 exit 0
