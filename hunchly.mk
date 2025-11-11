@@ -9,6 +9,11 @@ SHELL := /usr/bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 
 
+.ONESHELL:
+SHELL := /usr/bin/bash
+.SHELLFLAGS := -Eeuo pipefail -c
+
+
 
 
  setup:
