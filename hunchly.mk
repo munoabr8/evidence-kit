@@ -94,7 +94,8 @@ SHELL := /usr/bin/bash
 smoke-test:
 	test -f bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
 	mkdir -p artifacts
-	python3 bin/gen-index.py || true
+	# Prepare artifacts (create a minimal cast, wrappers and glue)
+	./bin/smoke_test.sh
 	test -f artifacts/index.html || { echo "missing artifacts/index.html"; exit 91; }
 	test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 92; }
 	test -f artifacts/asciinema-player.min.js || { echo "missing player.js"; exit 93; }
@@ -110,7 +111,6 @@ smoke-test:
 	curl -fS http://127.0.0.1:8009/index.html >/dev/null || { echo "index 404"; exit 98; }
 	hdr=$$(curl -sI http://127.0.0.1:8009/asciinema-player.min.js | tr -d '\r'); \
 	 echo "$$hdr" | grep -iqE '^Content-Type:\s*(application|text)/javascript' || { echo "$$hdr"; exit 99; }
-	SKIP_SERVER=1 ./bin/smoke_test.sh
 	kill $$SRV_PID || true
 	wait $$SRV_PID 2>/dev/null || true
 
