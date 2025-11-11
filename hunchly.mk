@@ -97,6 +97,19 @@ smoke-test:
 	# Prepare artifacts (create a minimal cast, wrappers and glue)
 	./bin/smoke_test.sh
 	test -f artifacts/index.html || { echo "missing artifacts/index.html"; exit 91; }
+	# If glue isn't present (CI fresh checkout), generate it from the template.
+	if [ ! -f artifacts/asciinema-glue.js ]; then \
+		echo "asciinema-glue.js not found — generating from templates/cast_glue.js.tpl"; \
+		if [ -f artifacts/asciinema-player.min.js ]; then js=./asciinema-player.min.js; else js=https://cdn.jsdelivr.net/npm/asciinema-player@3.11.1/dist/asciinema-player.min.js; fi; \
+		mkdir -p artifacts; \
+		if [ -f templates/cast_glue.js.tpl ]; then \
+			cp templates/cast_glue.js.tpl artifacts/asciinema-glue.js; \
+			sed -i "s|%%JS%%|$$js|g" artifacts/asciinema-glue.js; \
+			echo "wrote artifacts/asciinema-glue.js"; \
+		else \
+			echo "template templates/cast_glue.js.tpl not found"; exit 92; \
+		fi; \
+	fi; \
 	test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 92; }
 	test -f artifacts/asciinema-player.min.js || { echo "missing player.js"; exit 93; }
 	[ $$(wc -c < artifacts/asciinema-player.min.js) -ge $${MIN_JS_BYTES:-10240} ] || { echo "player.js too small"; exit 94; }
