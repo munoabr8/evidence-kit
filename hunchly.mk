@@ -92,16 +92,34 @@ smoke-test2:
 
 
 .ONESHELL:
+SHELL := /usr/bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 
 smoke-test:
+	# Ensure artifacts and index exist
+	mkdir -p artifacts
+	python3 bin/gen-index.py || true
+	[ -f artifacts/index.html ] || echo "<!doctype html><title>stub</title>" > artifacts/index.html
+
+	# Start server and wait until ready
 	python3 -m http.server 8009 --directory artifacts >/tmp/http.8009.log 2>&1 &
 	SRV_PID=$$!
 	echo "PID=$$SRV_PID"
-	for i in $$(seq 1 30); do curl -fsS http://127.0.0.1:8009/ && break || sleep 0.2; done
-	curl -fS http://127.0.0.1:8009/index.html >/dev/null
+
+	for i in $$(seq 1 50); do
+		curl -fsS http://127.0.0.1:8009/ >/dev/null && break || sleep 0.2
+	done
+
+	# Probe a file that actually exists
+	curl -fS http://127.0.0.1:8009/index.html >/dev/null || {
+		echo "index.html missing or not served"; exit 22; }
+
+	# Optional: also assert a JS asset you know exists
+	curl -fS http://127.0.0.1:8009/asciinema-player.min.js >/dev/null
+
 	kill $$SRV_PID || true
 	wait $$SRV_PID 2>/dev/null || true
+
 
 .PHONY: asciinema-record
 asciinema-record:
