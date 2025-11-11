@@ -5,10 +5,8 @@ HTTP_PORT ?= 8009
 BASIC_AUTH ?= wf:pass
 
 .ONESHELL:
-SHELL := /usr/bin/bash
+SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
-
- 
 
  setup:
 	@command -v ttyd >/dev/null || (sudo apt-get update -y && sudo apt-get install -y ttyd)
@@ -73,15 +71,18 @@ status: ## show ttyd status
 
 
 serve:
-	@pids="$$(lsof -t -i :$(HTTP_PORT) 2>/dev/null)"; \
-	if [ -n "$$pids" ]; then \
-	  echo "killing $$pids on :$(HTTP_PORT)"; \
-	  kill $$pids || true; \
-	else \
-	  echo "no process on :$(HTTP_PORT)"; \
-	fi; \
-	mkdir -p artifacts; \
-	cd artifacts && python3 -m http.server $(HTTP_PORT)
+	pids="$(lsof -t -i :$(HTTP_PORT) 2>/dev/null || :)"
+
+	case "$$pids" in
+	  ("" ) echo "no process on :$(HTTP_PORT)";;
+	  (*[!0-9\ ]*) echo "refusing to kill: '$$pids'" >&2;;
+	  (*)  echo "killing $$pids on :$(HTTP_PORT)";
+	       printf '%s\n' $$pids | tr ' ' '\n' | xargs kill || true;;
+	esac
+
+	mkdir -p artifacts
+	cd artifacts
+	exec python3 -m http.server $(HTTP_PORT)
 
 help:
 	@echo "Usage: make [target]"
