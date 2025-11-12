@@ -109,7 +109,7 @@ smoke-test:
 	  echo "wrote artifacts/asciinema-glue.js"
 	fi
 
-	test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 92; }
+	test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 45; }
 
 .PHONY: asciinema-record
 asciinema-record:
