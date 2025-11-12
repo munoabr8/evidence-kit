@@ -8,7 +8,7 @@ preflight_asserts() {
   mkdir -p artifacts
   python3 bin/gen-index.py || true
   test -f artifacts/index.html || { echo "missing artifacts/index.html"; exit 91; }
-  test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 92; }
+  test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 12; }
   test -f artifacts/asciinema-player.min.js || { echo "missing player.js"; exit 93; }
   [ "$(wc -c < artifacts/asciinema-player.min.js)" -ge "${MIN_JS_BYTES:-10240}" ] || { echo "player.js too small"; exit 94; }
 }
