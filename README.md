@@ -146,17 +146,6 @@ Next improvements (ideas)
 Contributing
 - Make changes via branches and open a pull request. Keep vendored assets pinned and update them in a separate change so reviewers can focus on behavioral changes.
 
-Git LFS note
--------------
-This repository may track large vendored artifacts under `artifacts/` (e.g. minified player bundles). If you plan to run playback locally or work with vendor binaries, install Git LFS on your machine and run:
-
-```bash
-git lfs install
-git lfs pull
-```
-
-The repository includes a `.gitattributes` file that marks common artifact patterns as LFS-tracked. We do not migrate history by default; adding `.gitattributes` only affects future commits.
-
 License
 - (add license info as appropriate)
 # evidence-kit
@@ -188,3 +177,4 @@ Repository Roles
 Repository	Role
 evidence-kit	Defines the reusable workflow and core scripts (bin/run_and_capture.sh, bin/run-wf).
 Your other project	Calls the reusable workflow to execute its own build/test/CI pipelines and capture evidence artifacts.
+d

@@ -49,9 +49,12 @@ sync-player:
 	MEDIA_JS="$$ROOT/media-pack/player/asciinema-player.min.js"; \
 	MEDIA_CSS="$$ROOT/media-pack/player/asciinema-player.min.css"; \
 	MEDIA_MAN="$$ROOT/media-pack/player/vendor-player.json"; \
+	MEDIA_GLUE="$$ROOT/media-pack/player/asciinema-glue.js"; \
 	if [ -f "$$MEDIA_JS" ]; then cp -f "$$MEDIA_JS" artifacts/asciinema-player.min.js && echo "[asciinema] synced $$MEDIA_JS -> artifacts/"; else echo "[asciinema] no media-pack JS to sync"; fi; \
 	if [ -f "$$MEDIA_CSS" ]; then cp -f "$$MEDIA_CSS" artifacts/asciinema-player.min.css && echo "[asciinema] synced $$MEDIA_CSS -> artifacts/"; else echo "[asciinema] no media-pack CSS to sync"; fi; \
-	if [ -f "$$MEDIA_MAN" ]; then cp -f "$$MEDIA_MAN" artifacts/vendor-player.json && echo "[asciinema] synced $$MEDIA_MAN -> artifacts/vendor-player.json"; else echo "[asciinema] no media-pack vendor manifest to sync"; fi
+	if [ -f "$$MEDIA_MAN" ]; then cp -f "$$MEDIA_MAN" artifacts/vendor-player.json && echo "[asciinema] synced $$MEDIA_MAN -> artifacts/vendor-player.json"; else echo "[asciinema] no media-pack vendor manifest to sync"; fi; \
+	if [ -f "$$MEDIA_GLUE" ]; then cp -f "$$MEDIA_GLUE" artifacts/asciinema-glue.js && echo "[asciinema] synced $$MEDIA_GLUE -> artifacts/"; else echo "[asciinema] no media-pack glue to sync"; fi;
+
 
 .SILENT: asciinema-fetch-player
 asciinema-fetch-player:

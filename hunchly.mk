@@ -3,9 +3,10 @@ HTTP_PORT ?= 8009
 
 
 BASIC_AUTH ?= wf:pass
+
+.ONESHELL:
 SHELL := /bin/bash
-
-
+.SHELLFLAGS := -Eeuo pipefail -c
 
  setup:
 	@command -v ttyd >/dev/null || (sudo apt-get update -y && sudo apt-get install -y ttyd)
@@ -70,25 +71,45 @@ status: ## show ttyd status
 
 
 serve:
-	@pids="$$(lsof -t -i :$(HTTP_PORT) 2>/dev/null)"; \
-	if [ -n "$$pids" ]; then \
-	  echo "killing $$pids on :$(HTTP_PORT)"; \
-	  kill $$pids || true; \
-	else \
-	  echo "no process on :$(HTTP_PORT)"; \
-	fi; \
-	mkdir -p artifacts; \
-	cd artifacts && python3 -m http.server $(HTTP_PORT)
+	pids="$(lsof -t -i :$(HTTP_PORT) 2>/dev/null || :)"
+
+	case "$$pids" in
+	  ("" ) echo "no process on :$(HTTP_PORT)";;
+	  (*[!0-9\ ]*) echo "refusing to kill: '$$pids'" >&2;;
+	  (*)  echo "killing $$pids on :$(HTTP_PORT)";
+	       printf '%s\n' $$pids | tr ' ' '\n' | xargs kill || true;;
+	esac
+
+	mkdir -p artifacts
+	cd artifacts
+	exec python3 -m http.server $(HTTP_PORT)
 
 help:
 	@echo "Usage: make [target]"
 	@grep '^[a-zA-Z0-9_-]\+:' hunchly.mk || true
 
 .PHONY: smoke-test
+
+ 
+ 
+
 smoke-test:
-	@echo "Running smoke-test: invoking ./tests/e2e/smoke_test.sh"
-	@mkdir -p artifacts
-	@./tests/e2e/smoke_test.sh
+	test -f bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
+	mkdir -p artifacts
+	./bin/smoke_test.sh
+	test -f artifacts/index.html || { echo "missing artifacts/index.html"; exit 91; }
+
+	# Generate glue if absent
+	if [ ! -f artifacts/asciinema-glue.js ]; then
+	  echo "asciinema-glue.js not found — generating from template"
+	  js=$([ -f artifacts/asciinema-player.min.js ] && echo ./asciinema-player.min.js || \
+	       echo https://cdn.jsdelivr.net/npm/asciinema-player@3.11.1/dist/asciinema-player.min.js)
+	  test -f templates/cast_glue.js.tpl || { echo "missing templates/cast_glue.js.tpl"; exit 92; }
+	  sed "s|%%JS%%|$${js}|g" templates/cast_glue.js.tpl > artifacts/asciinema-glue.js
+	  echo "wrote artifacts/asciinema-glue.js"
+	fi
+
+	test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 45;}
 
 .PHONY: asciinema-record
 asciinema-record:
