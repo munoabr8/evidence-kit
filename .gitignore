@@ -22,9 +22,14 @@ tests/**
 .env
 *.log
 *.pid
+*.pyc
 
 # Python / node local caches
 __pycache__/
+
+*/__pycache__/
+
+
 *.py[cod]
 .pytest_cache/
 .mypy_cache/
