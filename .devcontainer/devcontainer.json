@@ -3,7 +3,7 @@
   
   "name": "Evidence Kit",
 
-  "postStartCommand": "make setup",
+  "postStartCommand": "make -f hunchly.mk setup || true",
   "portsAttributes": {
     "8009": { "label": "serve", "visibility": "private" },
     "8020": { "label": "ttyd", "visibility": "private" }
