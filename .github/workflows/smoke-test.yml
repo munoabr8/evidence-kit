@@ -28,7 +28,11 @@ jobs:
       - name: Sync player assets (from media-pack -> artifacts)
         run: make -f asciinema.mk sync-player
 
+ 
       - name: Run smoke-test
+        env:
+          STRICT_INVARIANTS: 'true'
+          CI: 'true'
         run: make -f hunchly.mk smoke-test
 
       - name: Upload artifacts directory

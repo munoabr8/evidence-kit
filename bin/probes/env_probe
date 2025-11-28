@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#./bin/env_probe
+#./bin/probes/env_probe
 # ---- helpers ---------------------------------------------------------------
 _die() { echo "env_probe: $*" >&2; exit "${2:-3}"; }
 
