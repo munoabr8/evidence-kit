@@ -94,7 +94,7 @@ help:
  
 
 smoke-test:
-	test -f ./bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
+	test -f bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
 	mkdir -p artifacts
 	./bin/smoke_test.sh
 	test -f artifacts/index.html || { echo "missing artifacts/index.html"; exit 91; }
