@@ -103,14 +103,28 @@ def make_wrapper(name, src_path, mime):
             dst.write("</body>")
             return wp.name
 
+def resolve_art_dir() -> Path:
+    script_dir = Path(__file__).resolve().parent        # .../evidence-kit/bin
+    project_root = script_dir.parent                    # .../evidence-kit
+
+    env = os.getenv("ART_DIR")
+    if env:
+        p = Path(env)
+        if not p.is_absolute():
+            # interpret relative ART_DIR from project root, NOT CWD
+            p = project_root / p
+        return p.resolve()
+
+    # default when ART_DIR is unset
+    return (project_root / "artifacts").resolve()
+
 def main():
-    art_dir = Path(os.getenv("ART_DIR", "artifacts")).resolve()
+    art_dir = resolve_art_dir()
     art_dir.mkdir(parents=True, exist_ok=True)
     set_context(art_dir, int(os.getenv("EMBED_LIMIT_BYTES","1048576")))
 
     index_path = art_dir / "index.html"
 
-    # sanity: keep index inside art_dir
     if not str(index_path.resolve()).startswith(str(art_dir.resolve()) + os.sep):
         raise RuntimeError("index_path must be within ART_DIR")
 
@@ -120,7 +134,6 @@ def main():
         if src_path.is_file() and not str(name).endswith('.html'):
             artifact_names.add(Path(name).name)
 
-    # remove obsolete wrappers
     for name in os.listdir(art_dir):
         if str(name).endswith('.html') and name != 'index.html':
             base = str(name)[:-5]
@@ -155,4 +168,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
