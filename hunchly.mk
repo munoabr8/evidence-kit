@@ -94,7 +94,6 @@ help:
  
 
 smoke-test:
-	@echo "PWD from make recipe: $$(pwd)"
 	test -f bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
  
 	mkdir -p artifacts
