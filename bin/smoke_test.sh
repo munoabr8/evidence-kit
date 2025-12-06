@@ -2,23 +2,34 @@
 set -Eeuo pipefail
 trap 'rc=$?; echo "smoke_test.sh failed rc=$rc"; sed -n "1,200p" /tmp/http.$PORT.log || true; exit $rc' ERR
 
+LOG="${TMPDIR:-/tmp}/err_trap_harness.log"
+echo "DEBUG: LOG resolves to: $LOG" >&2
+: >"$LOG" 
 
 preflight_asserts() {
-  test -f bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
-  mkdir -p artifacts
-  python3 bin/gen-index.py || true
-  test -f artifacts/index.html || { echo "missing artifacts/index.html"; exit 91; }
-  test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 12; }
+  test -f ./gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
+
+TARGET="$(realpath -m ../artifacts/asciinema-glue.js  2>/dev/null)"
+
+echo "PWD:        $PWD"
+echo "Testing:    $TARGET"
+
+test -f "$TARGET" || { echo "NOT FOUND: $TARGET"; exit 90; }
+
+ # Add a test to essure artifacts directory exists.
+  test -d ../artifacts || { echo "missing artifacts directory"; exit 92; }
+ 
+  python3 ./gen-index.py || true
+  test -f ../artifacts/index.js || { echo $PWD " "; exit 91; }
+  test -f ../artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 12; }
   test -f artifacts/asciinema-player.min.js || { echo "missing player.js"; exit 93; }
   [ "$(wc -c < artifacts/asciinema-player.min.js)" -ge "${MIN_JS_BYTES:-10240}" ] || { echo "player.js too small"; exit 94; }
 }
-
+ 
 preflight_asserts
 
-
-LOG="${TMPDIR:-/tmp}/err_trap_harness.log"
-: >"$LOG"
-
+ 
+ 
 dump_diagnostics() {
   local status=$?
   printf 'TRAP: ts=%(%Y-%m-%dT%H:%M:%S)T status=%s cmd=%q line=%s func=%s src=%s pwd=%q\n' \
@@ -30,16 +41,19 @@ dump_diagnostics() {
     "${BASH_SOURCE[1]-MAIN}" \
     "$PWD" >>"$LOG" || true
 
+  echo "===== dump_diagnostics BEGIN =====" >>"$LOG" || true
+
   return "$status"
 }
-
- 
+  
 trap 'dump_diagnostics' ERR
 
+ 
 TARGET=smoke
 ASCIICAST=artifacts/${TARGET}.cast
-mkdir -p artifacts
+#mkdir -p artifacts
 
+echo "After preflight asserts, generating minimal asciicast at ${ASCIICAST}"
 if command -v asciinema >/dev/null; then
   # Use asciinema to record a quick non-interactive session
   asciinema rec --overwrite -q -c "printf 'smoke\n'; sleep 0.1; printf 'done\n'" "${ASCIICAST}" || { echo "asciinema rec failed"; exit 1; }
