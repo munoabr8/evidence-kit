@@ -7,22 +7,17 @@ echo "DEBUG: LOG resolves to: $LOG" >&2
 : >"$LOG" 
 
 preflight_asserts() {
-  test -f ./gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
+  test -f ./bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 100; }
 
-TARGET="$(realpath -m ../artifacts/asciinema-glue.js  2>/dev/null)"
-
-echo "PWD:        $PWD"
-echo "Testing:    $TARGET"
-
-test -f "$TARGET" || { echo "NOT FOUND: $TARGET"; exit 90; }
-
- # Add a test to essure artifacts directory exists.
-  test -d ../artifacts || { echo "missing artifacts directory"; exit 92; }
+  
  
-  python3 ./gen-index.py || true
-  test -f ../artifacts/index.js || { echo $PWD " "; exit 91; }
-  test -f ../artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 12; }
-  test -f artifacts/asciinema-player.min.js || { echo "missing player.js"; exit 93; }
+ # Add a test to essure artifacts directory exists.
+  test -d artifacts || { echo "missing artifacts directory"; exit 92; }
+ 
+  python3 ./bin/gen-index.py || true
+  test -f ./artifacts/index.html || { echo $PWD " "; exit 91; }
+  test -f ./artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 12; }
+  test -f ./artifacts/asciinema-player.min.js || { echo "missing player.js"; exit 93; }
   [ "$(wc -c < artifacts/asciinema-player.min.js)" -ge "${MIN_JS_BYTES:-10240}" ] || { echo "player.js too small"; exit 94; }
 }
  
