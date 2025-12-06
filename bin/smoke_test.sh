@@ -16,17 +16,24 @@ preflight_asserts() {
 preflight_asserts
 
 
-# On error, emit diagnostics to help CI logs (artifact listing and server headers)
+LOG="${TMPDIR:-/tmp}/err_trap_harness.log"
+: >"$LOG"
+
 dump_diagnostics() {
-  echo "--- SMOKE TEST DIAGNOSTICS ---"
-  echo "PWD: $(pwd)"
-  echo "ARTIFACTS:"; ls -la artifacts || true
-  echo "Server headers (if server running):";
-  if [ -n "${SERVER_PID:-}" ]; then
-    curl -s -I "http://127.0.0.1:${PORT}/" || true
-  fi
-  echo "--- END DIAGNOSTICS ---"
+  local status=$?
+  printf 'TRAP: ts=%(%Y-%m-%dT%H:%M:%S)T status=%s cmd=%q line=%s func=%s src=%s pwd=%q\n' \
+    -1 \
+    "$status" \
+    "$BASH_COMMAND" \
+    "${BASH_LINENO[0]}" \
+    "${FUNCNAME[1]-MAIN}" \
+    "${BASH_SOURCE[1]-MAIN}" \
+    "$PWD" >>"$LOG" || true
+
+  return "$status"
 }
+
+ 
 trap 'dump_diagnostics' ERR
 
 TARGET=smoke
