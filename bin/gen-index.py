@@ -164,7 +164,7 @@ def main():
                   "<h1>Artifacts Index</h1><ul>")
         idx.write("".join(links))
         idx.write("</ul></body>")
-    print(f"[index] wrote {index_path} with {len(links)} entries")
+    print(f"[index] --wrote {index_path} with {len(links)} entries")
 
 if __name__ == "__main__":
     main()
