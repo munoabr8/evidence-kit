@@ -17,3 +17,5 @@ next:
 	- Test to see if both the Dockerfile and Dockerfile.alpine are both required.
 	- Commit work added.
 	- Determine if codespace runs alpine or debian(unsure if this is correct)
+	- Determine if it tmux should be added to Alpine Dockerfile
+	- Determine how this repo will act locally when no docker is installed.

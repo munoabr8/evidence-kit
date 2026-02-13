@@ -9,6 +9,27 @@ Goals
 - Provide local-first playback of terminal recordings with an HTML wrapper (no mandatory uploads).
 - Keep tooling minimal and dependency-light (Make + small Python scripts + shell helpers).
 
+Local Setup (Without Docker)
+----------------------------
+evidence-kit works on any system with Python 3. Docker/Codespaces provide a consistent environment but are **optional**.
+
+**Minimum requirements:**
+- Python 3 (any modern version, no pip packages needed)
+- Make (GNU Make or compatible)
+- Git
+
+**Core features work immediately:**
+```bash
+python3 bin/gen-index.py              # Generate HTML previews
+python3 -m http.server 8009           # Serve artifacts locally
+```
+
+**Optional tools** (auto-install via `make -f hunchly.mk setup`):
+- `asciinema` - for terminal recording
+- `ttyd` - for live terminal sharing
+
+If auto-install fails, the setup target will show manual installation commands for your system.
+
 Quick start
 1. Regenerate previews (run from the repo root):
 ```bash

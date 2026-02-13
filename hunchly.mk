@@ -14,8 +14,14 @@ SHELL := /bin/bash
 			sudo apk add --no-cache ttyd; \
 		elif command -v apt-get >/dev/null 2>&1; then \
 			sudo apt-get update -y && sudo apt-get install -y ttyd; \
+		elif command -v brew >/dev/null 2>&1; then \
+			brew install ttyd; \
 		else \
-			echo "ERROR: No known package manager found" >&2; exit 1; \
+			echo "⚠️  ttyd not found. Install it for live terminal sharing:" >&2; \
+			echo "  macOS:   brew install ttyd" >&2; \
+			echo "  Alpine:  sudo apk add ttyd" >&2; \
+			echo "  Debian:  sudo apt-get install ttyd" >&2; \
+			echo "  Or skip 'make live' if not needed." >&2; \
 		fi; \
 	}
 	@command -v asciinema >/dev/null || { \
@@ -23,8 +29,14 @@ SHELL := /bin/bash
 			sudo apk add --no-cache asciinema; \
 		elif command -v apt-get >/dev/null 2>&1; then \
 			sudo apt-get update -y && sudo apt-get install -y asciinema; \
+		elif command -v brew >/dev/null 2>&1; then \
+			brew install asciinema; \
 		else \
-			echo "WARNING: asciinema not found and cannot be installed" >&2; \
+			echo "⚠️  asciinema not found. Install it for terminal recording:" >&2; \
+			echo "  macOS:   brew install asciinema" >&2; \
+			echo "  Alpine:  sudo apk add asciinema" >&2; \
+			echo "  Debian:  sudo apt-get install asciinema" >&2; \
+			echo "  Visit:   https://asciinema.org/docs/installation" >&2; \
 		fi; \
 	}
 

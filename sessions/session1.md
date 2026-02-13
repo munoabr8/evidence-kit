@@ -8,7 +8,7 @@ invariants:
     - One dockerfile(Docker.alpine) is being used to deploy codespace.
 state:
     - Docker/codespace  setup is successfully
-    - 
+    - Work has been comitted.
 
 next:
     
