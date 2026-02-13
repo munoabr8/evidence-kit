@@ -1,0 +1,23 @@
+# .devcontainer/Dockerfile.alpine
+
+FROM mcr.microsoft.com/devcontainers/base:alpine
+
+ENV LANG=C.UTF-8
+
+# Install tooling and dependencies
+RUN apk update && \
+    apk add --no-cache \
+      ca-certificates curl gnupg sudo git \
+      python3 py3-pip make build-base \
+      bash bash-completion \
+      asciinema ttyd && \
+    rm -rf /var/cache/apk/*
+
+# Install GitHub CLI
+RUN apk add --no-cache github-cli
+
+# Optional: expose git/gh bin in PATH (should be default)
+ENV PATH=/usr/bin:/usr/local/bin:$PATH
+
+# Set bash as default shell for vscode user
+RUN sed -i 's|/bin/ash|/bin/bash|' /etc/passwd

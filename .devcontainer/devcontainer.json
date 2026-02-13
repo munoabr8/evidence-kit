@@ -1,9 +1,12 @@
 {
-  "build": {"dockerfile":"Dockerfile"},
+  "build": {
+    "dockerfile": "Dockerfile.alpine",
+    "args": {}
+  },
   
   "name": "Evidence Kit",
 
-  "postStartCommand": "make -f hunchly.mk setup || true",
+  "postStartCommand": "bash .devcontainer/postStartCommand.sh",
   "portsAttributes": {
     "8009": { "label": "serve", "visibility": "private" },
     "8020": { "label": "ttyd", "visibility": "private" }

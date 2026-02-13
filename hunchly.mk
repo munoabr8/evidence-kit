@@ -9,8 +9,24 @@ SHELL := /bin/bash
 .SHELLFLAGS := -Eeuo pipefail -c
 
  setup:
-	@command -v ttyd >/dev/null || (sudo apt-get update -y && sudo apt-get install -y ttyd)
-	@command -v asciinema >/dev/null || echo "asciinema not found; run 'make -f asciinema.mk asciinema-record' after installing asciinema to capture terminal sessions."
+	@command -v ttyd >/dev/null || { \
+		if command -v apk >/dev/null 2>&1; then \
+			sudo apk add --no-cache ttyd; \
+		elif command -v apt-get >/dev/null 2>&1; then \
+			sudo apt-get update -y && sudo apt-get install -y ttyd; \
+		else \
+			echo "ERROR: No known package manager found" >&2; exit 1; \
+		fi; \
+	}
+	@command -v asciinema >/dev/null || { \
+		if command -v apk >/dev/null 2>&1; then \
+			sudo apk add --no-cache asciinema; \
+		elif command -v apt-get >/dev/null 2>&1; then \
+			sudo apt-get update -y && sudo apt-get install -y asciinema; \
+		else \
+			echo "WARNING: asciinema not found and cannot be installed" >&2; \
+		fi; \
+	}
 
 
 live: setup

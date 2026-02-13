@@ -1,0 +1,193 @@
+#!/usr/bin/env bash
+# bin/probes/devcontainer_startup_probe
+# Observability probe for devcontainer instantiation
+
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+log_info() { echo -e "${GREEN}✓${NC} $*"; }
+log_warn() { echo -e "${YELLOW}⚠${NC} $*"; }
+log_error() { echo -e "${RED}✗${NC} $*"; }
+
+# Track overall status
+FAILED=0
+
+echo "=== Devcontainer Startup Probe ==="
+echo "Timestamp: $(date -Iseconds)"
+echo
+
+# 1. Verify OS
+echo "1. Operating System Check"
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    log_info "OS: $PRETTY_NAME"
+    echo "   ID: $ID"
+    
+    # Detect package manager
+    if command -v apt-get >/dev/null 2>&1; then
+        PKG_MGR="apt-get"
+        log_info "Package manager: apt-get (Debian/Ubuntu)"
+    elif command -v apk >/dev/null 2>&1; then
+        PKG_MGR="apk"
+        log_info "Package manager: apk (Alpine)"
+    else
+        PKG_MGR="unknown"
+        log_error "No known package manager found"
+        FAILED=1
+    fi
+else
+    log_error "/etc/os-release not found"
+    FAILED=1
+fi
+echo
+
+# 2. Verify user context
+echo "2. User Context"
+log_info "User: $(whoami)"
+log_info "UID: $(id -u)"
+log_info "Groups: $(id -Gn)"
+echo
+
+# 3. Verify workspace mount
+echo "3. Workspace Mount"
+if [ -d /workspaces/evidence-kit ]; then
+    log_info "Workspace mounted: /workspaces/evidence-kit"
+    if [ -w /workspaces/evidence-kit ]; then
+        log_info "Workspace is writable"
+    else
+        log_error "Workspace is NOT writable"
+        FAILED=1
+    fi
+else
+    log_error "Workspace not found at /workspaces/evidence-kit"
+    FAILED=1
+fi
+echo
+
+# 4. Verify git
+echo "4. Git Configuration"
+if command -v git >/dev/null 2>&1; then
+    log_info "Git installed: $(git --version)"
+    
+    if git rev-parse --git-dir >/dev/null 2>&1; then
+        log_info "Inside git repository"
+        REPO_ROOT="$(git rev-parse --show-toplevel)"
+        log_info "Repository root: $REPO_ROOT"
+    else
+        log_warn "Not inside a git repository"
+    fi
+else
+    log_error "Git not installed"
+    FAILED=1
+fi
+echo
+
+# 5. Check required tools
+echo "5. Required Tools"
+REQUIRED_TOOLS=(python3 make)
+OPTIONAL_TOOLS=(ttyd asciinema gh curl)
+
+for tool in "${REQUIRED_TOOLS[@]}"; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        log_info "$tool: $(command -v "$tool")"
+    else
+        log_error "$tool: NOT FOUND (required)"
+        FAILED=1
+    fi
+done
+
+for tool in "${OPTIONAL_TOOLS[@]}"; do
+    if command -v "$tool" >/dev/null 2>&1; then
+        log_info "$tool: $(command -v "$tool")"
+    else
+        log_warn "$tool: NOT FOUND (optional but recommended)"
+    fi
+done
+echo
+
+# 6. Check Python dependencies
+echo "6. Python Environment"
+if command -v python3 >/dev/null 2>&1; then
+    log_info "Python: $(python3 --version)"
+    if command -v pip3 >/dev/null 2>&1; then
+        log_info "pip3: $(pip3 --version | head -n1)"
+        
+        if [ -f /workspaces/evidence-kit/requirements-dev.txt ]; then
+            log_info "requirements-dev.txt exists"
+        fi
+    else
+        log_warn "pip3 not installed"
+    fi
+fi
+echo
+
+# 7. Check network connectivity
+echo "7. Network Connectivity"
+if ping -c 1 -W 2 github.com >/dev/null 2>&1; then
+    log_info "Network: github.com reachable"
+else
+    log_warn "Network: github.com not reachable (might be firewalled)"
+fi
+echo
+
+# 8. Check artifacts directory
+echo "8. Artifacts Directory"
+if [ -d /workspaces/evidence-kit/artifacts ]; then
+    log_info "artifacts/ exists"
+    if [ -w /workspaces/evidence-kit/artifacts ]; then
+        log_info "artifacts/ is writable"
+    else
+        log_error "artifacts/ is NOT writable"
+        FAILED=1
+    fi
+else
+    log_warn "artifacts/ does not exist (will be created on demand)"
+fi
+echo
+
+# 9. Check setup execution
+echo "9. Makefile Setup Targets"
+if [ -f /workspaces/evidence-kit/hunchly.mk ]; then
+    log_info "hunchly.mk exists"
+    
+    # Test if make can parse it
+    if make -f /workspaces/evidence-kit/hunchly.mk -n setup >/dev/null 2>&1; then
+        log_info "hunchly.mk setup target is valid"
+    else
+        log_error "hunchly.mk setup target has errors"
+        FAILED=1
+    fi
+else
+    log_error "hunchly.mk not found"
+    FAILED=1
+fi
+echo
+
+# 10. Environment variables
+echo "10. Environment Variables"
+ENV_VARS=(ROOT ART_DIR WORKSPACE_FOLDER)
+for var in "${ENV_VARS[@]}"; do
+    if [ -n "${!var:-}" ]; then
+        log_info "$var=${!var}"
+    else
+        log_warn "$var: not set"
+    fi
+done
+echo
+
+# Final summary
+echo "==================================="
+if [ $FAILED -eq 0 ]; then
+    log_info "All critical checks passed"
+    echo
+    exit 0
+else
+    log_error "Some checks failed - environment may not be fully functional"
+    echo
+    exit 1
+fi
