@@ -2,7 +2,7 @@
 # Shared helpers for probes
 set -euo pipefail
 
-_die() { echo "env_probe: $*" >&2; exit "${2:-3}"; }
+_die() { echo "Common probe: $*" >&2; exit "${2:-3}"; }
 
 _abs() {
   if command -v readlink >/dev/null 2>&1 && readlink -f / >/dev/null 2>&1; then
@@ -19,10 +19,14 @@ decide_root() {
     : "${ART_DIR:="$ROOT/artifacts"}"
     return 0
   fi
-  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || _die "not inside a git work tree" 3
-  if git rev-parse --is-bare-repository >/dev/null 2>&1; then
-    _die "bare git repository unsupported" 3
-  fi
+ 
+  git rev-parse --is-inside-work-tree >/dev/null 2>&1 || _die "not inside a git work tree"
+
+is_bare="$(git rev-parse --is-bare-repository 2>/dev/null || echo false)"
+if [[ "$is_bare" == "true" ]]; then
+  _die "bare git repository unsupported" 3
+fi
+
   local super top
   super="$(git rev-parse --show-superproject-working-tree 2>/dev/null || true)"
   if [ -n "$super" ]; then top="$super"; else top="$(git rev-parse --show-toplevel 2>/dev/null)" || _die "cannot resolve repo toplevel" 3; fi

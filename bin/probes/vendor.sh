@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
-. "$script_dir/../probe_common.sh"
+. "$script_dir/probe_common.sh"
 
 probe_vendor() {
   decide_root

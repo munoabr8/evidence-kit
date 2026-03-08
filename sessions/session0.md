@@ -1,4 +1,4 @@
-session: setup/issue identification
+session: setup/issue identification(Remote)
 
 invariants:
 
