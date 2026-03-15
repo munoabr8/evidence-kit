@@ -18,7 +18,7 @@ def test_gen_index_happy_path(tmp_path):
     # create a small text artifact and run generator
     art = tmp_path
     (art / 'small.txt').write_text('hello world')
-    run_gen(str(art))
+    run_gen(str(art))   # Error here
     idx = art / 'index.html'
     assert idx.exists()
     wrapper = art / 'small.txt.html'
@@ -31,7 +31,7 @@ def test_gen_index_large_binary(tmp_path):
     big = art / 'big.bin'
     with open(big, 'wb') as fh:
         fh.write(b'\0' * (2 * 1024 * 1024))
-    run_gen(str(art))
+    run_gen(str(art))   #Error here
     idx = art / 'index.html'
     assert idx.exists()
     wrapper = art / 'big.bin.html'

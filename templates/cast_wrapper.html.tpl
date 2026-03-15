@@ -16,5 +16,10 @@ if (!document.querySelector('script[src="./asciinema-glue.js"]')) {
 }
 </script>
 
-<asciinema-player src='%%CAST_SRC%%' preload style='width:100%;height:80vh'></asciinema-player>
+<asciinema-player src='%%CAST_SRC%%'
+                  preload
+                  rows="40"
+                  style='width:100%; height:100vh'></asciinema-player>
+
+
 </body>
