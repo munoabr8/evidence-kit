@@ -10,8 +10,7 @@ set -euo pipefail
 case "$ROOT" in /*) ;; *) echo "ROOT must be absolute" >&2; exit 2;; esac
 case "$ART_DIR" in /*) ;; *) echo "ART_DIR must be absolute" >&2; exit 2;; esac
 
-
-WF="${1:-${WF:-tests}}"
+ WF="${1:-${WF:-tests}}"
 PORT="${PORT:-8020}"
 
 mkdir -p "$ART_DIR"
@@ -24,7 +23,15 @@ CAPTURE_PLAN="$ART_DIR/capture_plan.txt"
 echo "[capture] starting workflow '$WF' at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 # --- Execute the workflow and record output ---
-env -i PATH="/usr/bin:/bin:/usr/local/bin" \
+# env -i PATH="/usr/bin:/bin:/usr/local/bin" \
+#   bash -lc "./bin/run-wf $WF" 2>&1 | tee "$RAW_LOG"
+
+env -i \
+  HOME="${HOME:-/Users/abrahammunoz}" \
+  PATH="/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin" \
+  LANG="${LANG:-en_US.UTF-8}" \
+  XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME:-/Users/abrahammunoz}/.config}" \
+  ASCIINEMA_CONFIG_HOME="${ASCIINEMA_CONFIG_HOME:-${XDG_CONFIG_HOME:-${HOME:-/Users/abrahammunoz}/.config}/asciinema}" \
   bash -lc "./bin/run-wf $WF" 2>&1 | tee "$RAW_LOG"
 
 # --- Redact secrets ---

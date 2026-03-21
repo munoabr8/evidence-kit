@@ -1,10 +1,13 @@
 # gen_index_ctx.py  (or keep in the same module)
 # module-scoped will need to eventually -> context class
 from pathlib import Path
+from typing import Optional
 
-_ART_DIR: Path | None = None
-_EMBED_LIMIT: int | None = None
+_ART_DIR: Optional[Path] = None
 
+
+_EMBED_LIMIT: Optional[int] = None
+ 
 def set_context(art_dir: Path, embed_limit: int) -> None:
     global _ART_DIR, _EMBED_LIMIT
     _ART_DIR = Path(art_dir).resolve()

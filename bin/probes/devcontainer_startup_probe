@@ -137,9 +137,9 @@ echo
 
 # 8. Check artifacts directory
 echo "8. Artifacts Directory"
-if [ -d /workspaces/evidence-kit/artifacts ]; then
+if [ -d ../evidence-kit/artifacts ]; then
     log_info "artifacts/ exists"
-    if [ -w /workspaces/evidence-kit/artifacts ]; then
+    if [ -w ../evidence-kit/artifacts ]; then
         log_info "artifacts/ is writable"
     else
         log_error "artifacts/ is NOT writable"
@@ -152,11 +152,11 @@ echo
 
 # 9. Check setup execution
 echo "9. Makefile Setup Targets"
-if [ -f /workspaces/evidence-kit/hunchly.mk ]; then
+if [ -f ../evidence-kit/hunchly.mk ]; then
     log_info "hunchly.mk exists"
     
     # Test if make can parse it
-    if make -f /workspaces/evidence-kit/hunchly.mk -n setup >/dev/null 2>&1; then
+    if make -f ../evidence-kit/hunchly.mk -n setup >/dev/null 2>&1; then
         log_info "hunchly.mk setup target is valid"
     else
         log_error "hunchly.mk setup target has errors"

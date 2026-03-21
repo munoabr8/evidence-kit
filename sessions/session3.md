@@ -9,16 +9,16 @@ Invariant:
 	     When the git repo is deleted, this does not change the contents 
 	     of the local directory (evidenceKit and its contents)
 
+	
 State:
 	- Fundamental make targets are failing.
 		-> make -f hunchly.mk capture	
-
 	- Fundamental probes are failing.
-
 	- Single test for gen_index is failing.
-
+	- Generated playback video and enabled full screen capture using "stty rows 60 cols 120" 
 
 Next Step:
 	
 	
 	- Push changes, delete local repo, re-clone repo(from remote),setup, execute 
+

@@ -70,6 +70,9 @@ asciinema-fetch-player:
 install:
 	@sudo apt-get update && sudo apt-get install -y asciinema
 
+# This target is being used when user wants to record a single script.
+# Useful when you have a very specific observation you want to make.
+# Can this be used with python and bash scripts?
 asciinema-record:
 	@command -v $(ASCIINEMA) >/dev/null || { echo "Install $(ASCIINEMA) to record (see README)"; exit 1; }
 	@mkdir -p artifacts

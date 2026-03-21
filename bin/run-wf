@@ -11,7 +11,9 @@ echo "[wf] starting workflow '$WF' at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 case "$WF" in
   tests)
     echo "[wf] running tests"
-    pytest -q || true
+    make -f hunchly.mk smoke-test
+    # Tests should assert basic pre-conditions or unit behavior?
+    #pytest -q || true
     ;;
   build)
     echo "[wf] building project"
