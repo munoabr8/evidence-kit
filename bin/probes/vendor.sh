@@ -4,8 +4,13 @@ script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 . "$script_dir/probe_common.sh"
 
 probe_vendor() {
+ 
   decide_root
+     echo "DEBUG: after decide_root"
+
   guard_root
+      echo "DEBUG: after guard_root"
+
   local manifest="$ART_DIR/vendor-player.json"
   if [ ! -f "$manifest" ]; then
     echo "vendor: missing manifest: $manifest" >&2; return 5
@@ -80,7 +85,9 @@ PY
     done
   fi
 }
+ 
 
-if [ "${BASH_SOURCE[0]}" = "$0" ]; then
-  probe_vendor "$1"
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  probe_vendor "$@"
 fi

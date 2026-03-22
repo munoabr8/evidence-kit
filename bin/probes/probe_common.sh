@@ -41,18 +41,27 @@ guard_root() {
   [ -n "$ROOT" ] && [ -d "$ROOT" ] || _die "ROOT missing or not a dir: $ROOT"
   case "$ART_DIR" in /*) : ;; *) _die "ART_DIR must be absolute: $ART_DIR";; esac
 }
+ 
 
 _detect_git_flags() {
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     in_git=true
-    git_root="$(git rev-parse --show-toplevel)"
-    superproject_root="$(git rev-parse --show-superproject-working-tree 2>/dev/null || true)"
+    git_root=$(git rev-parse --show-toplevel 2>/dev/null || true)
+
+    if superproject_root=$(git rev-parse --show-superproject-working-tree 2>/dev/null); then
+      :
+    else
+      superproject_root=""
+    fi
+
     is_submodule=false
-    [ -n "$superproject_root" ] && is_submodule=true
+    if [ -n "$superproject_root" ]; then
+      is_submodule=true
+    fi
   else
     in_git=false
-    is_submodule=false
     git_root=""
     superproject_root=""
+    is_submodule=false
   fi
 }

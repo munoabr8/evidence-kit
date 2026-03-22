@@ -4,9 +4,10 @@ script_dir=$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")
 . "$script_dir/probe_common.sh"
 
 probe_repo() {
-  _detect_git_flags
-  decide_root
-  guard_root
+   _detect_git_flags
+   decide_root
+   guard_root
+ 
   if [ "$in_git" != true ]; then
     echo "repo: not a git repository" >&2; return 4
   fi
@@ -35,6 +36,9 @@ PY
   fi
 }
 
-if [ "${BASH_SOURCE[0]}" = "$0" ]; then
-  probe_repo "$1"
+#What should be passed to the function?
+echo "running as main: BASH_SOURCE[0]=${BASH_SOURCE[0]} 0=$0"
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  probe_repo "$@"
 fi

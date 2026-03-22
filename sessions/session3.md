@@ -21,4 +21,4 @@ Next Step:
 	
 	
 	- Push changes, delete local repo, re-clone repo(from remote),setup, execute 
-
+	- Capture output of all probes

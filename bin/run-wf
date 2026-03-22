@@ -9,6 +9,9 @@ WF="${1:-${WF:-tests}}"
 echo "[wf] starting workflow '$WF' at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 case "$WF" in
+
+  # Does the test workflow all unit tests or can it just be 
+  # a smoke test? It would depend on what target was being executed.
   tests)
     echo "[wf] running tests"
     make -f hunchly.mk smoke-test

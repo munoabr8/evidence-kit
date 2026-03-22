@@ -4,6 +4,8 @@ ASCIINEMA_CMD ?= ./bin/run_and_capture.sh
 CAST_OUT ?= artifacts/run.cast
 FILE ?= $(CAST_OUT)
 
+ 
+ 
 .PHONY: asciinema-record asciinema-play asciinema-hash asciinema-upload asciinema-embed asciinema-record-with-env install
  
 .PHONY: asciinema-fetch-player
@@ -73,11 +75,18 @@ install:
 # This target is being used when user wants to record a single script.
 # Useful when you have a very specific observation you want to make.
 # Can this be used with python and bash scripts?
+# asciinema-record:
+# 	@command -v $(ASCIINEMA) >/dev/null || { echo "Install $(ASCIINEMA) to record (see README)"; exit 1; }
+# 	@mkdir -p artifacts
+# 	@echo "[asciinema] recording: $(ASCIINEMA_CMD) -> $(CAST_OUT)"
+# 	@$(ASCIINEMA) rec -c "$(ASCIINEMA_CMD)" $(CAST_OUT)
+
 asciinema-record:
-	@command -v $(ASCIINEMA) >/dev/null || { echo "Install $(ASCIINEMA) to record (see README)"; exit 1; }
-	@mkdir -p artifacts
-	@echo "[asciinema] recording: $(ASCIINEMA_CMD) -> $(CAST_OUT)"
-	@$(ASCIINEMA) rec -c "$(ASCIINEMA_CMD)" $(CAST_OUT)
+	command -v asciinema >/dev/null || { echo "Install asciinema to record (see README)"; exit 1; }
+	mkdir -p artifacts
+	echo "[asciinema] recording: $(ASCIINEMA_CMD) -> $(CAST_OUT)"
+	asciinema rec -c "$(ASCIINEMA_CMD)" "$(CAST_OUT)"
+
 
 asciinema-play:
 	@command -v $(ASCIINEMA) >/dev/null || { echo "Install $(ASCIINEMA) to play (see README)"; exit 1; }
