@@ -2,10 +2,11 @@
 from pathlib import Path
 from gen_index_ctx import set_context, get_art_dir, get_embed_limit
 from template import render_template
-import os, mimetypes, base64, shutil
+import os, mimetypes, base64, shutil,argparse
 from html import escape
 
 mimetypes.init()
+ 
 
 def is_text_file(mime):
     return bool(mime) and (
@@ -14,6 +15,52 @@ def is_text_file(mime):
         mime.endswith("+json")
     )
 
+from pathlib import Path
+
+def remove_obsolete_wrappers(art_dir: Path):
+    """
+    Remove HTML wrapper files that no longer have a corresponding base artifact.
+
+    Also removes invalid wrappers for raw assets (.js, .css, .json).
+    """
+
+    WRAP_SUFFIXES = {".cast", ".log", ".txt"}
+    RAW_SUFFIXES = {".js", ".css", ".json"}
+
+    for path in art_dir.glob("*.html"):
+        if path.name == "index.html":
+            continue
+
+        name = path.name
+
+        # Strip ".html"
+        base_name = name[:-5]
+        base_path = art_dir / base_name
+        base_suffix = Path(base_name).suffix
+
+        # Case 1: wrapper exists but base file is gone → delete
+        if not base_path.exists():
+            print(f"[cleanup] removing orphan wrapper: {path.name}")
+            path.unlink()
+            continue
+
+        # Case 2: wrapper should NOT exist for raw assets → delete
+        if base_suffix in RAW_SUFFIXES:
+            print(f"[cleanup] removing invalid wrapper for raw asset: {path.name}")
+            path.unlink()
+            continue
+
+        # Case 3: wrapper is not for a known previewable type → delete
+        if base_suffix not in WRAP_SUFFIXES:
+            print(f"[cleanup] removing unknown wrapper type: {path.name}")
+            path.unlink()
+            continue
+
+        # Otherwise: valid wrapper → keep
+
+def should_link_raw(path: Path, mime: str | None) -> bool:
+    return path.suffix in {".js", ".css", ".json"}
+ 
 def make_wrapper(name, src_path, mime):
     art_dir = get_art_dir()
     embed_limit = get_embed_limit()
@@ -102,57 +149,65 @@ def make_wrapper(name, src_path, mime):
 
             dst.write("</body>")
             return wp.name
-
+ 
 def main():
-    art_dir = Path(os.getenv("ART_DIR", "artifacts")).resolve()
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--art-dir", default=os.environ.get("ART_DIR", "artifacts"))
+    ap.add_argument("--embed-limit-bytes", type=int, default=int(os.environ.get("EMBED_LIMIT_BYTES", "1048576")))
+    args = ap.parse_args()
+
+    art_dir = Path(args.art_dir)
     art_dir.mkdir(parents=True, exist_ok=True)
-    set_context(art_dir, int(os.getenv("EMBED_LIMIT_BYTES","1048576")))
 
-    index_path = art_dir / "index.html"
-
-    # sanity: keep index inside art_dir
-    if not str(index_path.resolve()).startswith(str(art_dir.resolve()) + os.sep):
-        raise RuntimeError("index_path must be within ART_DIR")
-
-    artifact_names = set()
-    for name in os.listdir(art_dir):
-        src_path = art_dir / name
-        if src_path.is_file() and not str(name).endswith('.html'):
-            artifact_names.add(Path(name).name)
-
-    # remove obsolete wrappers
-    for name in os.listdir(art_dir):
-        if str(name).endswith('.html') and name != 'index.html':
-            base = str(name)[:-5]
-            if base not in artifact_names:
-                try:
-                    (art_dir / name).unlink()
-                    print(f"[index] removed obsolete wrapper: {name}")
-                except Exception as e:
-                    print(f"[index] failed to remove {name}: {e}")
-
-    links = []
+    # Generate wrappers for previewable artifacts (optional: keep existing behavior)
     for name in sorted(os.listdir(art_dir)):
         src_path = art_dir / name
+        if not src_path.is_file():
+            continue
+        if name.endswith(".html"):
+            continue
+        mime, _ = mimetypes.guess_type(str(src_path))
+        if Path(name).suffix in {".cast", ".log", ".txt"}:
+            make_wrapper(name, str(src_path), mime)
+
+    # Remove obsolete wrappers (unchanged)
+    remove_obsolete_wrappers(art_dir)
+
+    links = []
+
+    for name in sorted(os.listdir(art_dir)):
+        src_path = art_dir / name
+
         if src_path.is_dir():
             links.append(f'<li><a href="{name}/">{name}/</a> (dir)</li>')
             continue
-        if not src_path.is_file() or str(name).endswith('.html'):
+
+        if not src_path.is_file() or name.endswith(".html"):
             continue
 
         mime, _ = mimetypes.guess_type(str(src_path))
-        wrapper = make_wrapper(name, str(src_path), mime)
+        path_obj = Path(name)
+
+        # Routing decision
+        if path_obj.suffix in {".js", ".css", ".json"}:
+            href = name
+        else:
+            href = f"{name}.html"
+
+        # Assertion (minimal but useful)
+        if path_obj.suffix in {".js", ".css", ".json"}:
+            assert href == name, f"raw asset incorrectly wrapped: {name} -> {href}"
+
         size = src_path.stat().st_size
         label = "text" if is_text_file(mime) else (mime or "binary")
-        links.append(f'<li><a href="{wrapper}">{name}</a> ({label}, {size} bytes)</li>')
 
-    with index_path.open("w", encoding="utf-8") as idx:
-        idx.write("<!doctype html><meta charset='utf-8'><body>"
-                  "<h1>Artifacts Index</h1><ul>")
+        links.append(f'<li><a href="{href}">{name}</a> ({label}, {size} bytes)</li>')
+
+    index_path = art_dir / "index.html"
+    with open(index_path, "w", encoding="utf-8") as idx:
+        idx.write("<!doctype html><meta charset='utf-8'><body><h1>Artifacts Index</h1><ul>")
         idx.write("".join(links))
         idx.write("</ul></body>")
-    print(f"[index] wrote {index_path} with {len(links)} entries")
-
 if __name__ == "__main__":
     main()
 
