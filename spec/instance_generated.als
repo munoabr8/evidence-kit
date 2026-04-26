@@ -1,0 +1,190 @@
+open evidence_capture_model
+
+one sig Root, ArtifactsDir, artifacts_devcontainer_startup_probe_cast, artifacts_env_probe_cast, artifacts_env_vars_probe_cast, artifacts_make_debug3_cast, artifacts_make_dryrun_cast, artifacts_make_graph_cast, artifacts_repo_probe_cast, artifacts_run_cast, artifacts_run_1777086192_cast, artifacts_run_1777086218_cast, artifacts_run_1777086260_cast, artifacts_smoke_cast, artifacts_vendor_probe_cast, artifacts_vendor_probe_gen_new_manifest_cast, artifacts_devcontainer_startup_probe_cast_html, artifacts_env_probe_cast_html, artifacts_env_vars_probe_cast_html, artifacts_make_debug3_cast_html, artifacts_make_dryrun_cast_html, artifacts_make_graph_cast_html, artifacts_repo_probe_cast_html, artifacts_run_cast_html, artifacts_run_1777086192_cast_html, artifacts_run_1777086218_cast_html, artifacts_run_1777086260_cast_html, artifacts_smoke_cast_html, artifacts_vendor_probe_cast_html, artifacts_vendor_probe_gen_new_manifest_cast_html, artifacts_devcontainer_startup_probe_meta_txt, artifacts_env_probe_meta_txt, artifacts_env_vars_probe_meta_txt, artifacts_make_debug3_meta_txt, artifacts_make_dryrun_meta_txt, artifacts_make_graph_meta_txt, artifacts_repo_probe_meta_txt, artifacts_run_meta_txt, artifacts_run_1777086192_meta_txt, artifacts_run_1777086218_meta_txt, artifacts_run_1777086260_meta_txt, artifacts_smoke_meta_txt, artifacts_vendor_probe_meta_txt, artifacts_vendor_probe_gen_new_manifest_meta_txt extends Path {}
+
+one sig artifacts_devcontainer_startup_probe_castCapture, artifacts_env_probe_castCapture, artifacts_env_vars_probe_castCapture, artifacts_make_debug3_castCapture, artifacts_make_dryrun_castCapture, artifacts_make_graph_castCapture, artifacts_repo_probe_castCapture, artifacts_run_castCapture, artifacts_run_1777086192_castCapture, artifacts_run_1777086218_castCapture, artifacts_run_1777086260_castCapture, artifacts_smoke_castCapture, artifacts_vendor_probe_castCapture, artifacts_vendor_probe_gen_new_manifest_castCapture extends CaptureArtifact {}
+
+one sig artifacts_devcontainer_startup_probe_cast_htmlWrapper, artifacts_env_probe_cast_htmlWrapper, artifacts_env_vars_probe_cast_htmlWrapper, artifacts_make_debug3_cast_htmlWrapper, artifacts_make_dryrun_cast_htmlWrapper, artifacts_make_graph_cast_htmlWrapper, artifacts_repo_probe_cast_htmlWrapper, artifacts_run_cast_htmlWrapper, artifacts_run_1777086192_cast_htmlWrapper, artifacts_run_1777086218_cast_htmlWrapper, artifacts_run_1777086260_cast_htmlWrapper, artifacts_smoke_cast_htmlWrapper, artifacts_vendor_probe_cast_htmlWrapper, artifacts_vendor_probe_gen_new_manifest_cast_htmlWrapper extends WrapperArtifact {}
+
+one sig artifacts_devcontainer_startup_probe_meta_txtSidecar, artifacts_env_probe_meta_txtSidecar, artifacts_env_vars_probe_meta_txtSidecar, artifacts_make_debug3_meta_txtSidecar, artifacts_make_dryrun_meta_txtSidecar, artifacts_make_graph_meta_txtSidecar, artifacts_repo_probe_meta_txtSidecar, artifacts_run_meta_txtSidecar, artifacts_run_1777086192_meta_txtSidecar, artifacts_run_1777086218_meta_txtSidecar, artifacts_run_1777086260_meta_txtSidecar, artifacts_smoke_meta_txtSidecar, artifacts_vendor_probe_meta_txtSidecar, artifacts_vendor_probe_gen_new_manifest_meta_txtSidecar extends MetadataSidecar {}
+
+fact GeneratedPaths {
+  ArtifactsDir.parent = Root
+  artifacts_devcontainer_startup_probe_cast.parent = ArtifactsDir
+  artifacts_env_probe_cast.parent = ArtifactsDir
+  artifacts_env_vars_probe_cast.parent = ArtifactsDir
+  artifacts_make_debug3_cast.parent = ArtifactsDir
+  artifacts_make_dryrun_cast.parent = ArtifactsDir
+  artifacts_make_graph_cast.parent = ArtifactsDir
+  artifacts_repo_probe_cast.parent = ArtifactsDir
+  artifacts_run_cast.parent = ArtifactsDir
+  artifacts_run_1777086192_cast.parent = ArtifactsDir
+  artifacts_run_1777086218_cast.parent = ArtifactsDir
+  artifacts_run_1777086260_cast.parent = ArtifactsDir
+  artifacts_smoke_cast.parent = ArtifactsDir
+  artifacts_vendor_probe_cast.parent = ArtifactsDir
+  artifacts_vendor_probe_gen_new_manifest_cast.parent = ArtifactsDir
+  artifacts_devcontainer_startup_probe_cast_html.parent = ArtifactsDir
+  artifacts_env_probe_cast_html.parent = ArtifactsDir
+  artifacts_env_vars_probe_cast_html.parent = ArtifactsDir
+  artifacts_make_debug3_cast_html.parent = ArtifactsDir
+  artifacts_make_dryrun_cast_html.parent = ArtifactsDir
+  artifacts_make_graph_cast_html.parent = ArtifactsDir
+  artifacts_repo_probe_cast_html.parent = ArtifactsDir
+  artifacts_run_cast_html.parent = ArtifactsDir
+  artifacts_run_1777086192_cast_html.parent = ArtifactsDir
+  artifacts_run_1777086218_cast_html.parent = ArtifactsDir
+  artifacts_run_1777086260_cast_html.parent = ArtifactsDir
+  artifacts_smoke_cast_html.parent = ArtifactsDir
+  artifacts_vendor_probe_cast_html.parent = ArtifactsDir
+  artifacts_vendor_probe_gen_new_manifest_cast_html.parent = ArtifactsDir
+  artifacts_devcontainer_startup_probe_meta_txt.parent = ArtifactsDir
+  artifacts_env_probe_meta_txt.parent = ArtifactsDir
+  artifacts_env_vars_probe_meta_txt.parent = ArtifactsDir
+  artifacts_make_debug3_meta_txt.parent = ArtifactsDir
+  artifacts_make_dryrun_meta_txt.parent = ArtifactsDir
+  artifacts_make_graph_meta_txt.parent = ArtifactsDir
+  artifacts_repo_probe_meta_txt.parent = ArtifactsDir
+  artifacts_run_meta_txt.parent = ArtifactsDir
+  artifacts_run_1777086192_meta_txt.parent = ArtifactsDir
+  artifacts_run_1777086218_meta_txt.parent = ArtifactsDir
+  artifacts_run_1777086260_meta_txt.parent = ArtifactsDir
+  artifacts_smoke_meta_txt.parent = ArtifactsDir
+  artifacts_vendor_probe_meta_txt.parent = ArtifactsDir
+  artifacts_vendor_probe_gen_new_manifest_meta_txt.parent = ArtifactsDir
+}
+
+fact GeneratedCaptureArtifacts {
+  artifacts_devcontainer_startup_probe_castCapture.path = artifacts_devcontainer_startup_probe_cast
+  artifacts_devcontainer_startup_probe_castCapture.wrapper = artifacts_devcontainer_startup_probe_cast_htmlWrapper
+  artifacts_devcontainer_startup_probe_castCapture.sidecar = artifacts_devcontainer_startup_probe_meta_txtSidecar
+  artifacts_env_probe_castCapture.path = artifacts_env_probe_cast
+  artifacts_env_probe_castCapture.wrapper = artifacts_env_probe_cast_htmlWrapper
+  artifacts_env_probe_castCapture.sidecar = artifacts_env_probe_meta_txtSidecar
+  artifacts_env_vars_probe_castCapture.path = artifacts_env_vars_probe_cast
+  artifacts_env_vars_probe_castCapture.wrapper = artifacts_env_vars_probe_cast_htmlWrapper
+  artifacts_env_vars_probe_castCapture.sidecar = artifacts_env_vars_probe_meta_txtSidecar
+  artifacts_make_debug3_castCapture.path = artifacts_make_debug3_cast
+  artifacts_make_debug3_castCapture.wrapper = artifacts_make_debug3_cast_htmlWrapper
+  artifacts_make_debug3_castCapture.sidecar = artifacts_make_debug3_meta_txtSidecar
+  artifacts_make_dryrun_castCapture.path = artifacts_make_dryrun_cast
+  artifacts_make_dryrun_castCapture.wrapper = artifacts_make_dryrun_cast_htmlWrapper
+  artifacts_make_dryrun_castCapture.sidecar = artifacts_make_dryrun_meta_txtSidecar
+  artifacts_make_graph_castCapture.path = artifacts_make_graph_cast
+  artifacts_make_graph_castCapture.wrapper = artifacts_make_graph_cast_htmlWrapper
+  artifacts_make_graph_castCapture.sidecar = artifacts_make_graph_meta_txtSidecar
+  artifacts_repo_probe_castCapture.path = artifacts_repo_probe_cast
+  artifacts_repo_probe_castCapture.wrapper = artifacts_repo_probe_cast_htmlWrapper
+  artifacts_repo_probe_castCapture.sidecar = artifacts_repo_probe_meta_txtSidecar
+  artifacts_run_castCapture.path = artifacts_run_cast
+  artifacts_run_castCapture.wrapper = artifacts_run_cast_htmlWrapper
+  artifacts_run_castCapture.sidecar = artifacts_run_meta_txtSidecar
+  artifacts_run_1777086192_castCapture.path = artifacts_run_1777086192_cast
+  artifacts_run_1777086192_castCapture.wrapper = artifacts_run_1777086192_cast_htmlWrapper
+  artifacts_run_1777086192_castCapture.sidecar = artifacts_run_1777086192_meta_txtSidecar
+  artifacts_run_1777086218_castCapture.path = artifacts_run_1777086218_cast
+  artifacts_run_1777086218_castCapture.wrapper = artifacts_run_1777086218_cast_htmlWrapper
+  artifacts_run_1777086218_castCapture.sidecar = artifacts_run_1777086218_meta_txtSidecar
+  artifacts_run_1777086260_castCapture.path = artifacts_run_1777086260_cast
+  artifacts_run_1777086260_castCapture.wrapper = artifacts_run_1777086260_cast_htmlWrapper
+  artifacts_run_1777086260_castCapture.sidecar = artifacts_run_1777086260_meta_txtSidecar
+  artifacts_smoke_castCapture.path = artifacts_smoke_cast
+  artifacts_smoke_castCapture.wrapper = artifacts_smoke_cast_htmlWrapper
+  artifacts_smoke_castCapture.sidecar = artifacts_smoke_meta_txtSidecar
+  artifacts_vendor_probe_castCapture.path = artifacts_vendor_probe_cast
+  artifacts_vendor_probe_castCapture.wrapper = artifacts_vendor_probe_cast_htmlWrapper
+  artifacts_vendor_probe_castCapture.sidecar = artifacts_vendor_probe_meta_txtSidecar
+  artifacts_vendor_probe_gen_new_manifest_castCapture.path = artifacts_vendor_probe_gen_new_manifest_cast
+  artifacts_vendor_probe_gen_new_manifest_castCapture.wrapper = artifacts_vendor_probe_gen_new_manifest_cast_htmlWrapper
+  artifacts_vendor_probe_gen_new_manifest_castCapture.sidecar = artifacts_vendor_probe_gen_new_manifest_meta_txtSidecar
+}
+
+fact GeneratedWrapperArtifacts {
+  artifacts_devcontainer_startup_probe_cast_htmlWrapper.path = artifacts_devcontainer_startup_probe_cast_html
+  artifacts_devcontainer_startup_probe_cast_htmlWrapper.source = artifacts_devcontainer_startup_probe_castCapture
+  artifacts_env_probe_cast_htmlWrapper.path = artifacts_env_probe_cast_html
+  artifacts_env_probe_cast_htmlWrapper.source = artifacts_env_probe_castCapture
+  artifacts_env_vars_probe_cast_htmlWrapper.path = artifacts_env_vars_probe_cast_html
+  artifacts_env_vars_probe_cast_htmlWrapper.source = artifacts_env_vars_probe_castCapture
+  artifacts_make_debug3_cast_htmlWrapper.path = artifacts_make_debug3_cast_html
+  artifacts_make_debug3_cast_htmlWrapper.source = artifacts_make_debug3_castCapture
+  artifacts_make_dryrun_cast_htmlWrapper.path = artifacts_make_dryrun_cast_html
+  artifacts_make_dryrun_cast_htmlWrapper.source = artifacts_make_dryrun_castCapture
+  artifacts_make_graph_cast_htmlWrapper.path = artifacts_make_graph_cast_html
+  artifacts_make_graph_cast_htmlWrapper.source = artifacts_make_graph_castCapture
+  artifacts_repo_probe_cast_htmlWrapper.path = artifacts_repo_probe_cast_html
+  artifacts_repo_probe_cast_htmlWrapper.source = artifacts_repo_probe_castCapture
+  artifacts_run_cast_htmlWrapper.path = artifacts_run_cast_html
+  artifacts_run_cast_htmlWrapper.source = artifacts_run_castCapture
+  artifacts_run_1777086192_cast_htmlWrapper.path = artifacts_run_1777086192_cast_html
+  artifacts_run_1777086192_cast_htmlWrapper.source = artifacts_run_1777086192_castCapture
+  artifacts_run_1777086218_cast_htmlWrapper.path = artifacts_run_1777086218_cast_html
+  artifacts_run_1777086218_cast_htmlWrapper.source = artifacts_run_1777086218_castCapture
+  artifacts_run_1777086260_cast_htmlWrapper.path = artifacts_run_1777086260_cast_html
+  artifacts_run_1777086260_cast_htmlWrapper.source = artifacts_run_1777086260_castCapture
+  artifacts_smoke_cast_htmlWrapper.path = artifacts_smoke_cast_html
+  artifacts_smoke_cast_htmlWrapper.source = artifacts_smoke_castCapture
+  artifacts_vendor_probe_cast_htmlWrapper.path = artifacts_vendor_probe_cast_html
+  artifacts_vendor_probe_cast_htmlWrapper.source = artifacts_vendor_probe_castCapture
+  artifacts_vendor_probe_gen_new_manifest_cast_htmlWrapper.path = artifacts_vendor_probe_gen_new_manifest_cast_html
+  artifacts_vendor_probe_gen_new_manifest_cast_htmlWrapper.source = artifacts_vendor_probe_gen_new_manifest_castCapture
+}
+
+fact GeneratedMetadataSidecars {
+  artifacts_devcontainer_startup_probe_meta_txtSidecar.path = artifacts_devcontainer_startup_probe_meta_txt
+  artifacts_devcontainer_startup_probe_meta_txtSidecar.describes = artifacts_devcontainer_startup_probe_castCapture
+  artifacts_devcontainer_startup_probe_meta_txtSidecar.cwd = Root
+  artifacts_env_probe_meta_txtSidecar.path = artifacts_env_probe_meta_txt
+  artifacts_env_probe_meta_txtSidecar.describes = artifacts_env_probe_castCapture
+  artifacts_env_probe_meta_txtSidecar.cwd = Root
+  artifacts_env_vars_probe_meta_txtSidecar.path = artifacts_env_vars_probe_meta_txt
+  artifacts_env_vars_probe_meta_txtSidecar.describes = artifacts_env_vars_probe_castCapture
+  artifacts_env_vars_probe_meta_txtSidecar.cwd = Root
+  artifacts_make_debug3_meta_txtSidecar.path = artifacts_make_debug3_meta_txt
+  artifacts_make_debug3_meta_txtSidecar.describes = artifacts_make_debug3_castCapture
+  artifacts_make_debug3_meta_txtSidecar.cwd = Root
+  artifacts_make_dryrun_meta_txtSidecar.path = artifacts_make_dryrun_meta_txt
+  artifacts_make_dryrun_meta_txtSidecar.describes = artifacts_make_dryrun_castCapture
+  artifacts_make_dryrun_meta_txtSidecar.cwd = Root
+  artifacts_make_graph_meta_txtSidecar.path = artifacts_make_graph_meta_txt
+  artifacts_make_graph_meta_txtSidecar.describes = artifacts_make_graph_castCapture
+  artifacts_make_graph_meta_txtSidecar.cwd = Root
+  artifacts_repo_probe_meta_txtSidecar.path = artifacts_repo_probe_meta_txt
+  artifacts_repo_probe_meta_txtSidecar.describes = artifacts_repo_probe_castCapture
+  artifacts_repo_probe_meta_txtSidecar.cwd = Root
+  artifacts_run_meta_txtSidecar.path = artifacts_run_meta_txt
+  artifacts_run_meta_txtSidecar.describes = artifacts_run_castCapture
+  artifacts_run_meta_txtSidecar.cwd = Root
+  artifacts_run_1777086192_meta_txtSidecar.path = artifacts_run_1777086192_meta_txt
+  artifacts_run_1777086192_meta_txtSidecar.describes = artifacts_run_1777086192_castCapture
+  artifacts_run_1777086192_meta_txtSidecar.cwd = Root
+  artifacts_run_1777086218_meta_txtSidecar.path = artifacts_run_1777086218_meta_txt
+  artifacts_run_1777086218_meta_txtSidecar.describes = artifacts_run_1777086218_castCapture
+  artifacts_run_1777086218_meta_txtSidecar.cwd = Root
+  artifacts_run_1777086260_meta_txtSidecar.path = artifacts_run_1777086260_meta_txt
+  artifacts_run_1777086260_meta_txtSidecar.describes = artifacts_run_1777086260_castCapture
+  artifacts_run_1777086260_meta_txtSidecar.cwd = Root
+  artifacts_smoke_meta_txtSidecar.path = artifacts_smoke_meta_txt
+  artifacts_smoke_meta_txtSidecar.describes = artifacts_smoke_castCapture
+  artifacts_smoke_meta_txtSidecar.cwd = Root
+  artifacts_vendor_probe_meta_txtSidecar.path = artifacts_vendor_probe_meta_txt
+  artifacts_vendor_probe_meta_txtSidecar.describes = artifacts_vendor_probe_castCapture
+  artifacts_vendor_probe_meta_txtSidecar.cwd = Root
+  artifacts_vendor_probe_gen_new_manifest_meta_txtSidecar.path = artifacts_vendor_probe_gen_new_manifest_meta_txt
+  artifacts_vendor_probe_gen_new_manifest_meta_txtSidecar.describes = artifacts_vendor_probe_gen_new_manifest_castCapture
+  artifacts_vendor_probe_gen_new_manifest_meta_txtSidecar.cwd = Root
+}
+
+fact GeneratedCaptureRun {
+  one r: CaptureRun {
+    r.root = Root
+    r.artDir = ArtifactsDir
+    r.produces = artifacts_devcontainer_startup_probe_castCapture + artifacts_env_probe_castCapture + artifacts_env_vars_probe_castCapture + artifacts_make_debug3_castCapture + artifacts_make_dryrun_castCapture + artifacts_make_graph_castCapture + artifacts_repo_probe_castCapture + artifacts_run_castCapture + artifacts_run_1777086192_castCapture + artifacts_run_1777086218_castCapture + artifacts_run_1777086260_castCapture + artifacts_smoke_castCapture + artifacts_vendor_probe_castCapture + artifacts_vendor_probe_gen_new_manifest_castCapture + artifacts_devcontainer_startup_probe_cast_htmlWrapper + artifacts_env_probe_cast_htmlWrapper + artifacts_env_vars_probe_cast_htmlWrapper + artifacts_make_debug3_cast_htmlWrapper + artifacts_make_dryrun_cast_htmlWrapper + artifacts_make_graph_cast_htmlWrapper + artifacts_repo_probe_cast_htmlWrapper + artifacts_run_cast_htmlWrapper + artifacts_run_1777086192_cast_htmlWrapper + artifacts_run_1777086218_cast_htmlWrapper + artifacts_run_1777086260_cast_htmlWrapper + artifacts_smoke_cast_htmlWrapper + artifacts_vendor_probe_cast_htmlWrapper + artifacts_vendor_probe_gen_new_manifest_cast_htmlWrapper
+  }
+}
+
+run {} for exactly 44 Path, exactly 1 CaptureRun, exactly 14 CaptureArtifact, exactly 14 WrapperArtifact, exactly 14 MetadataSidecar
+
+run MissingSidecar for exactly 40 Path, exactly 1 CaptureRun, exactly 14 CaptureArtifact, exactly 14 WrapperArtifact, exactly 14 MetadataSidecar
+
+run MissingWrapper for exactly 40 Path, exactly 1 CaptureRun, exactly 14 CaptureArtifact, exactly 14 WrapperArtifact, exactly 14 MetadataSidecar

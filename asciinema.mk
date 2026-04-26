@@ -87,6 +87,11 @@ asciinema-record:
 	echo "[asciinema] recording: $(ASCIINEMA_CMD) -> $(CAST_OUT)"
 	asciinema rec -c "$(ASCIINEMA_CMD)" "$(CAST_OUT)"
 
+asciinema-record2:
+	command -v asciinema >/dev/null || { echo "Install asciinema to record (see README)"; exit 1; }
+	mkdir -p artifacts
+	echo "[asciinema] recording: $(ASCIINEMA_CMD) -> $(CAST_OUT)"
+	./bin/run_with_meta.sh --out "$(CAST_OUT)" -- asciinema rec -c "$(ASCIINEMA_CMD)" "$(CAST_OUT)"
 
 asciinema-play:
 	@command -v $(ASCIINEMA) >/dev/null || { echo "Install $(ASCIINEMA) to play (see README)"; exit 1; }

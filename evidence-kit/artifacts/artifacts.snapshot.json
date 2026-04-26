@@ -1,0 +1,94 @@
+{
+  "generated_at": "2026-04-20T00:27:25.489220+00:00",
+  "artifacts_dir": "/Users/abrahammunoz/evidenceKit/evidence-kit/artifacts",
+  "casts": [
+    "devcontainer_startup_probe.cast",
+    "env_probe.cast",
+    "env_vars_probe.cast",
+    "make_debug3.cast",
+    "make_dryrun.cast",
+    "make_graph.cast",
+    "repo_probe.cast",
+    "run.cast",
+    "smoke.cast",
+    "vendor_probe.cast",
+    "vendor_probe_gen_new_manifest.cast"
+  ],
+  "wrappers": [
+    "devcontainer_startup_probe.cast.html",
+    "env_probe.cast.html",
+    "env_vars_probe.cast.html",
+    "make_debug3.cast.html",
+    "make_dryrun.cast.html",
+    "make_graph.cast.html",
+    "repo_probe.cast.html",
+    "run.cast.html",
+    "smoke.cast.html",
+    "vendor_probe.cast.html",
+    "vendor_probe_gen_new_manifest.cast.html"
+  ],
+  "assets": [
+    "asciinema-glue.js",
+    "asciinema-player.min.css",
+    "asciinema-player.min.js",
+    "capture_plan.txt",
+    "capture_plan.txt.html",
+    "index.html",
+    "run-001.meta.txt",
+    "run-001.meta.txt.html",
+    "run.cast.html.clean.bak",
+    "run.meta.txt",
+    "run.meta.txt.html",
+    "vendor-player.json",
+    "wf.log",
+    "wf.log.html",
+    "wf.raw.log",
+    "wf.raw.log.html"
+  ],
+  "relations": [
+    {
+      "cast": "devcontainer_startup_probe.cast",
+      "wrapper": "devcontainer_startup_probe.cast.html"
+    },
+    {
+      "cast": "env_probe.cast",
+      "wrapper": "env_probe.cast.html"
+    },
+    {
+      "cast": "env_vars_probe.cast",
+      "wrapper": "env_vars_probe.cast.html"
+    },
+    {
+      "cast": "make_debug3.cast",
+      "wrapper": "make_debug3.cast.html"
+    },
+    {
+      "cast": "make_dryrun.cast",
+      "wrapper": "make_dryrun.cast.html"
+    },
+    {
+      "cast": "make_graph.cast",
+      "wrapper": "make_graph.cast.html"
+    },
+    {
+      "cast": "repo_probe.cast",
+      "wrapper": "repo_probe.cast.html"
+    },
+    {
+      "cast": "run.cast",
+      "wrapper": "run.cast.html"
+    },
+    {
+      "cast": "smoke.cast",
+      "wrapper": "smoke.cast.html"
+    },
+    {
+      "cast": "vendor_probe.cast",
+      "wrapper": "vendor_probe.cast.html"
+    },
+    {
+      "cast": "vendor_probe_gen_new_manifest.cast",
+      "wrapper": "vendor_probe_gen_new_manifest.cast.html"
+    }
+  ]
+}
