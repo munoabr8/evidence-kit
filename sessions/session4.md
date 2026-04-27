@@ -18,3 +18,4 @@ State:
 next:
 	- Generate new codespace project(of main branch). Regenerate artifacts in "artifacts" directory.
 	- Update the readme for the project.
+    - 
