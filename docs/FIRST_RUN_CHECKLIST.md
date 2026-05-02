@@ -66,8 +66,26 @@ Each item is self-contained — you do **not** need to understand the whole syst
 
 ---
 
+## Module map (optional)
+
+- [ ] Register a component:
+  ```bash
+  python3 bin/module_map.py add gen-index bin/gen-index.py \
+      "Generates HTML previews for artifacts" \
+      --public-api gen_index --art-dir artifacts
+  ```
+- [ ] Run `python3 bin/module_map.py show --art-dir artifacts` — record appears as JSON
+- [ ] Check `artifacts/module_map.json` exists and is valid JSON
+
+---
+
 ## Checklist self-check
 
-> _"If onboarding requires understanding the whole system first, the onboarding design is wrong."_
+Self-check rules from the Layered Goal Graph:
+
+1. If an action has no path upward, it is probably noise.
+2. If a high-level goal has no path downward, it is probably fantasy.
+3. If onboarding requires understanding the whole system first, the onboarding design is wrong.
+4. If changing one part forces changes everywhere, the design is too rigid.
 
 Each item above is independently runnable. If you find a step that blocks on a later step, that is a gap — please open an issue.

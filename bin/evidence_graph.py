@@ -12,6 +12,8 @@ Implements the Layered Goal Graph:
                                             validate_wrappers()
     - Minimize cognitive load / onboarding → see docs/QUICKSTART.md,
                                              docs/FIRST_RUN_CHECKLIST.md
+    - Make it easier to change in future   → see bin/module_map.py,
+                                             docs/INTERFACE_SPEC.md
   L2 (Actions):           link_artifact_to_claim(), add_contradiction(),
                           validate_wrappers() / emit_validation_log()
   L3 (Evidence):          emit_metadata() → metadata.json
