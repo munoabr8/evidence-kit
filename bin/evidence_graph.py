@@ -5,7 +5,13 @@ evidence_graph.py — L1/L2/L3 evidence management for evidence-kit.
 Implements the Layered Goal Graph:
 
   L0 (North Star):        Minimize wrong assumptions
-  L1 (Objectives):        falsify() — checks claims against evidence
+  L1 (Objectives):
+    - Build a falsification engine        → falsify()
+    - Generate value from evidence wflows → link_artifact_to_claim(),
+                                            add_contradiction(),
+                                            validate_wrappers()
+    - Minimize cognitive load / onboarding → see docs/QUICKSTART.md,
+                                             docs/FIRST_RUN_CHECKLIST.md
   L2 (Actions):           link_artifact_to_claim(), add_contradiction(),
                           validate_wrappers() / emit_validation_log()
   L3 (Evidence):          emit_metadata() → metadata.json
