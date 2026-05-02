@@ -4,8 +4,14 @@ module_map.py — L2/L3 component modularization tracker for evidence-kit.
 
 Maps to the Layered Goal Graph:
   L1 (Objective):  Make it easier to change in the future
-  L2 (Action):     Modularize components
-  L3 (Evidence):   module map  →  module_map.json
+  L2 (Actions):
+    - Show change impact           →  module_map.py show
+    - Document stable contracts    →  docs/INTERFACE_SPEC.md (Stable/Internal table)
+    - Define contribution ritual   →  docs/INTERFACE_SPEC.md ("Updating this spec")
+  L3 (Evidence):
+    - module_map.json              →  dependency graph for impact analysis
+    - INTERFACE_SPEC.md            →  frozen JSON fields, CLI flags, exit codes
+    - "Updating this spec" section →  spec update + module_map add + validate ritual
 
 Each module record captures:
   - name         short identifier (e.g. "gen-index")

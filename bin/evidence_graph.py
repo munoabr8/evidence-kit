@@ -12,8 +12,15 @@ Implements the Layered Goal Graph:
                                             validate_wrappers()
     - Minimize cognitive load / onboarding → see docs/QUICKSTART.md,
                                              docs/FIRST_RUN_CHECKLIST.md
-    - Make it easier to change in future   → see bin/module_map.py,
-                                             docs/INTERFACE_SPEC.md
+    - Make it easier to change in future
+        L2 (Actions):
+          - Show change impact              → module_map.py show
+          - Document stable contracts       → docs/INTERFACE_SPEC.md (Stable/Internal table)
+          - Define contribution ritual      → docs/INTERFACE_SPEC.md ("Updating this spec")
+        L3 (Evidence):
+          - module_map.json                 → dependency graph for impact analysis
+          - INTERFACE_SPEC.md               → frozen JSON fields, CLI flags, exit codes
+          - "Updating this spec" section    → spec update + module_map add + validate ritual
   L2 (Actions):           link_artifact_to_claim(), add_contradiction(),
                           validate_wrappers() / emit_validation_log()
   L3 (Evidence):          emit_metadata() → metadata.json
