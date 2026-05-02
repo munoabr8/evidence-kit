@@ -2,29 +2,25 @@
 """
 evidence_graph.py — L1/L2/L3 evidence management for evidence-kit.
 
-Implements the Layered Goal Graph:
+Implements the Layered Goal Graph (see docs/GOAL_GRAPH.md for the full graph):
 
-  L0 (North Star):        Minimize wrong assumptions
-  L1 (Objectives):
-    - Build a falsification engine        → falsify()
-    - Generate value from evidence wflows → link_artifact_to_claim(),
-                                            add_contradiction(),
-                                            validate_wrappers()
-    - Minimize cognitive load / onboarding → see docs/QUICKSTART.md,
-                                             docs/FIRST_RUN_CHECKLIST.md
-    - Make it easier to change in future
-        L2 (Actions):
-          - Show change impact              → module_map.py show
-          - Document stable contracts       → docs/INTERFACE_SPEC.md (Stable/Internal table)
-          - Define contribution ritual      → docs/INTERFACE_SPEC.md ("Updating this spec")
-        L3 (Evidence):
-          - module_map.json                 → dependency graph for impact analysis
-          - INTERFACE_SPEC.md               → frozen JSON fields, CLI flags, exit codes
-          - "Updating this spec" section    → spec update + module_map add + validate ritual
-  L2 (Actions):           link_artifact_to_claim(), add_contradiction(),
-                          validate_wrappers() / emit_validation_log()
-  L3 (Evidence):          emit_metadata() → metadata.json
-                          emit_validation_log() → validation_log.json
+  L0 (North Star):  Minimize number of wrong assumptions
+  L1 (Objective):   Build a falsification engine  [S4]
+  L2 (Actions):
+    - Surface contradictions     → add_contradiction()
+    - Link artifacts to claims   → link_artifact_to_claim()
+    - Run validation tests       → validate_wrappers() / emit_validation_log()
+    - Classify failures          → falsify() — status: supported|unsupported|contradicted
+    - Drive repairs              → falsify() report surfaces wrong_assumptions count
+  L3 (Evidence):
+    - metadata.json              → emit_metadata()
+    - claims.json                → link_artifact_to_claim(), add_contradiction()
+    - validation_log.json        → emit_validation_log()
+
+  Related modules (same goal graph):
+    bin/predict.py     — L2 prediction-vs-outcome log (also feeds S4)
+    bin/risk_ops.py    — L1 "Instrument risky operations" [S5]
+    bin/module_map.py  — L1 "Make it easier to change in the future" [S6]
 
 CLI usage (run from repo root):
   python3 bin/evidence_graph.py metadata

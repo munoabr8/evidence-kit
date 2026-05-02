@@ -1,6 +1,6 @@
 # Interface Spec
 
-> **L3 Evidence artifact** for the L1 objective: *Make it easier to change in the future.*  
+> **L3 Evidence artifact** for the L1 objectives: *Make it easier to change in the future* and *Instrument risky operations.*  
 > Documents the stable public contracts between components.  
 > Self-check rule #4: "If changing one part forces changes everywhere, the design is too rigid."
 
@@ -95,6 +95,55 @@ module_map.py show   [name]                                                     
 ```
 
 **Breaking-change boundary:** the JSON field names above are stable. The `name` field is the primary key; renaming a module is a breaking change for any downstream consumer that references it.
+
+---
+
+## Contract: `bin/risk_ops.py`
+
+**Purpose:** Declare risky operations, capture pre/post state snapshots, maintain an audit trail,
+and surface failures — fulfilling L1 "Instrument risky operations".
+
+**Stable CLI surface:**
+```
+risk_ops.py declare  <op_name> <risk_level> <description> [--rollback CMD]
+risk_ops.py snapshot <op_name> <phase> [KEY=VALUE ...]
+risk_ops.py log      <op_name> <event> [--details TEXT] [--severity LEVEL]
+risk_ops.py diff     <op_name>
+risk_ops.py show     [--registry|--trail|--snapshots]
+```
+
+`risk_level` is one of: `low`, `medium`, `high`, `critical`.  
+`phase` is one of: `pre`, `post`.  
+`severity` is one of: `info`, `warning`, `error`, `critical`.
+
+**Stable outputs (JSON schema):**
+
+`risk_registry.json` — array of operation declarations:
+```json
+[{"op_name": "...", "risk_level": "...", "description": "...",
+  "rollback_cmd": "...", "declared_at": "..."}]
+```
+
+`pre_post_snapshots.json` — array of state snapshots:
+```json
+[{"op_name": "...", "phase": "pre|post", "captured_at": "...", "state": {}}]
+```
+
+`audit_trail.json` — append-only log of events:
+```json
+[{"op_name": "...", "event": "...", "details": "...",
+  "severity": "...", "logged_at": "..."}]
+```
+
+`diff` output — pre/post state diff for a named operation:
+```json
+{"op_name": "...", "pre_captured_at": "...", "post_captured_at": "...",
+ "diff": {"key": {"before": "...", "after": "...", "change": "added|removed|modified"}}}
+```
+
+**Breaking-change boundary:** the JSON field names above, the four `risk_level` values, the
+two `phase` values, the four `severity` values, and `diff_snapshots` exit code (0 = success,
+1 = missing snapshot) are stable. Internal function signatures are not.
 
 ---
 
