@@ -142,7 +142,7 @@ risk_ops.py show     [--registry|--trail|--snapshots]
 ```
 
 **Breaking-change boundary:** the JSON field names above, the four `risk_level` values, the
-two `phase` values, the four `severity` values, and `diff_snapshots` exit code (0 = success,
+two `phase` values, the four `severity` values, and the `diff` exit code (0 = success,
 1 = missing snapshot) are stable. Internal function signatures are not.
 
 ---
