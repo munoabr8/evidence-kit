@@ -13,4 +13,6 @@ file artifacts/asciinema-glue.js | grep -q "text"
 echo "[¬S] verifying server behavior"
 curl -sI "http://localhost:${PORT}/asciinema-player.min.js" | grep -q "Content-Type"
 
+#curl -sI "http://localhost:8009/asciinema-player.min.js"
+
 echo "[¬S] verification passed"

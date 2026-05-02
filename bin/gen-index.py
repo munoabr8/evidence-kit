@@ -158,6 +158,7 @@ def main():
 
     art_dir = Path(args.art_dir)
     art_dir.mkdir(parents=True, exist_ok=True)
+    set_context(art_dir=art_dir, embed_limit=args.embed_limit_bytes)
 
     # Generate wrappers for previewable artifacts (optional: keep existing behavior)
     for name in sorted(os.listdir(art_dir)):
