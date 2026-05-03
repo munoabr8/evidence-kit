@@ -148,14 +148,25 @@ Self-check rules:
 ## Strategy Map (L0 ↔ L1)
 
 ```
-V1 (Cognitive load)  ←→  S1, S3, S6
-V2 (Friction)        ←→  S2, S3, S6
+V1 (Cognitive load)    ←→  S1, S3, S6
+V2 (Friction)          ←→  S2, S3, S6
 V3 (Wrong assumptions) ←→  S4, S6
 V4 (Risky operations)  ←→  S5, S6
 ```
 
 Each North Star value is supported by multiple strategic objectives (purple lines in the
 visual goal graph).
+
+---
+
+## Execution Map (L1 → L2 → L3 → L4)
+
+| Layer | S1 — Simplify developer experience | S2 — Streamline Evidence Kit usage | S3 — Simplify onboarding for new users | S4 — Build a falsification engine | S5 — Instrument risky operations | S6 — Make it easier to change |
+|---|---|---|---|---|---|---|
+| **L2 Operational Objectives** | Reduce context switching; intuitive interfaces; clear feedback | One-command setup; integrated workflows; reusable templates | Fast first value; progressive learning; clear guidance; reduce upfront | Surface contradictions; link artifacts to claims; run tests; classify failures | Require verifiable feedback; log pre/post; reversible; expose failures | Modularize; stable interfaces; decouple; version and migrate |
+| **L3 Actions / Tactics** | Sensible defaults; inline guidance; better errors; shortcuts | Setup script; templates; aliases; workflow automation | Quickstart; checklist; example project; in-context help | Contradiction detector; claim → evidence map; test runner | Risk declaration; pre/post snapshots; audit log; failure alerts | Modular architecture; clear boundaries; stable APIs; config-driven |
+| **L4 Evidence / Artifacts** | Telemetry; error logs; UX feedback; time-on-task | Setup logs; command logs; usage analytics; templates used | Onboarding guide; checklist completion; time to first success; confusion notes | Contradiction report; claim-evidence graph; test results; failure reports; repair history | Risk registry; operation logs; pre/post state diff; audit trail; incident reports | Module map; interface docs; changelog; migration tests; deprecation log |
+| **Quality Check** | Is cognitive load measurably reduced? (legibility, speed, error rate) | Is usage friction measurably reduced? (setup time, steps, drop-off) | Can a new user achieve first success quickly and confidently? | Are wrong assumptions being surfaced and corrected? | Are risky operations observable, explicit, and verifiable? | Can components be changed without cascading breakage? |
 
 ---
 
@@ -169,6 +180,28 @@ visual goal graph).
 | S4 — Build a falsification engine | Implemented | `bin/evidence_graph.py`, `bin/predict.py` |
 | S5 — Instrument risky operations | Implemented | `bin/risk_ops.py` |
 | S6 — Make it easier to change | Implemented | `bin/module_map.py`, `docs/INTERFACE_SPEC.md` |
+
+---
+
+## Why This Matters
+
+| Benefit | Detail |
+|---|---|
+| Fewer wrong assumptions | Continuous falsification surfaces and corrects bad beliefs before they compound. |
+| Faster onboarding, higher adoption | Lower the cost of first success → less support burden, more contributors. |
+| Lower cognitive load, more flow | Intuitive defaults and clear feedback keep developers in a productive state. |
+| Less friction → used and trusted | An Evidence Kit that is easy to invoke actually gets used, making evidence real. |
+| Visible, verifiable risk operations | Explicit risk declarations and audit trails build confidence in the system. |
+| Easier changes, lower long-term cost | Stable interfaces and modular architecture reduce the cost of every future change. |
+
+---
+
+## North Star Outcome
+
+> **Evidence you can trust. Decisions you can defend. Systems that get better over time.**
+
+This model is iterative: **Measure → Learn → Improve → Repeat.**
+Every link should have evidence. Every goal should be testable.
 
 ---
 
