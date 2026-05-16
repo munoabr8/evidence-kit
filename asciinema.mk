@@ -37,25 +37,38 @@ ASCIINEMA_PLAYER_CSS ?= artifacts/asciinema-player.min.css
 VENDOR_MANIFEST ?= artifacts/vendor-player.json
 
 .PHONY: vendor-player
+# vendor-player:
+# 	@mkdir -p artifacts
+# 	@echo "[asciinema] vendor-player: v$(ASCIINEMA_PLAYER_VERSION) -> artifacts/"
+# 	@chmod +x bin/vendor-player.sh 2>/dev/null || true
+# 	@bin/vendor-player.sh $(ASCIINEMA_PLAYER_VERSION) $(ASCIINEMA_PLAYER_JS) $(ASCIINEMA_PLAYER_CSS) $(VENDOR_MANIFEST)
+
 vendor-player:
 	@mkdir -p artifacts
 	@echo "[asciinema] vendor-player: v$(ASCIINEMA_PLAYER_VERSION) -> artifacts/"
 	@chmod +x bin/vendor-player.sh 2>/dev/null || true
 	@bin/vendor-player.sh $(ASCIINEMA_PLAYER_VERSION) $(ASCIINEMA_PLAYER_JS) $(ASCIINEMA_PLAYER_CSS) $(VENDOR_MANIFEST)
 
+	@mkdir -p $(ASSET_DIR)
+	# copy or fetch into $(ASSET_DIR)
+	@ln -sf $(ASSET_DIR)/asciinema-player.min.js $(ART_DIR)/asciinema-player.min.js
+	@ln -sf $(ASSET_DIR)/asciinema-player.min.css $(ART_DIR)/asciinema-player.min.css
+	@ln -sf $(ASSET_DIR)/asciinema-glue.js $(ART_DIR)/asciinema-glue.js
+
+
 .PHONY: sync-player
-sync-player:
-	@# Copy canonical media-pack player assets (if present) into artifacts/ for serving
-	@mkdir -p artifacts
-	@ROOT=$$(cd $(dir $(abspath $(lastword $(MAKEFILE_LIST)))) && pwd) || ROOT="."; \
-	MEDIA_JS="$$ROOT/media-pack/player/asciinema-player.min.js"; \
-	MEDIA_CSS="$$ROOT/media-pack/player/asciinema-player.min.css"; \
-	MEDIA_MAN="$$ROOT/media-pack/player/vendor-player.json"; \
-	MEDIA_GLUE="$$ROOT/media-pack/player/asciinema-glue.js"; \
-	if [ -f "$$MEDIA_JS" ]; then cp -f "$$MEDIA_JS" artifacts/asciinema-player.min.js && echo "[asciinema] synced $$MEDIA_JS -> artifacts/"; else echo "[asciinema] no media-pack JS to sync"; fi; \
-	if [ -f "$$MEDIA_CSS" ]; then cp -f "$$MEDIA_CSS" artifacts/asciinema-player.min.css && echo "[asciinema] synced $$MEDIA_CSS -> artifacts/"; else echo "[asciinema] no media-pack CSS to sync"; fi; \
-	if [ -f "$$MEDIA_MAN" ]; then cp -f "$$MEDIA_MAN" artifacts/vendor-player.json && echo "[asciinema] synced $$MEDIA_MAN -> artifacts/vendor-player.json"; else echo "[asciinema] no media-pack vendor manifest to sync"; fi; \
-	if [ -f "$$MEDIA_GLUE" ]; then cp -f "$$MEDIA_GLUE" artifacts/asciinema-glue.js && echo "[asciinema] synced $$MEDIA_GLUE -> artifacts/"; else echo "[asciinema] no media-pack glue to sync"; fi;
+# sync-player:
+# 	@# Copy canonical media-pack player assets (if present) into artifacts/ for serving
+# 	@mkdir -p artifacts
+# 	@ROOT=$$(cd $(dir $(abspath $(lastword $(MAKEFILE_LIST)))) && pwd) || ROOT="."; \
+# 	MEDIA_JS="$$ROOT/media-pack/player/asciinema-player.min.js"; \
+# 	MEDIA_CSS="$$ROOT/media-pack/player/asciinema-player.min.css"; \
+# 	MEDIA_MAN="$$ROOT/media-pack/player/vendor-player.json"; \
+# 	MEDIA_GLUE="$$ROOT/media-pack/player/asciinema-glue.js"; \
+# 	if [ -f "$$MEDIA_JS" ]; then cp -f "$$MEDIA_JS" artifacts/asciinema-player.min.js && echo "[asciinema] synced $$MEDIA_JS -> artifacts/"; else echo "[asciinema] no media-pack JS to sync"; fi; \
+# 	if [ -f "$$MEDIA_CSS" ]; then cp -f "$$MEDIA_CSS" artifacts/asciinema-player.min.css && echo "[asciinema] synced $$MEDIA_CSS -> artifacts/"; else echo "[asciinema] no media-pack CSS to sync"; fi; \
+# 	if [ -f "$$MEDIA_MAN" ]; then cp -f "$$MEDIA_MAN" artifacts/vendor-player.json && echo "[asciinema] synced $$MEDIA_MAN -> artifacts/vendor-player.json"; else echo "[asciinema] no media-pack vendor manifest to sync"; fi; \
+# 	if [ -f "$$MEDIA_GLUE" ]; then cp -f "$$MEDIA_GLUE" artifacts/asciinema-glue.js && echo "[asciinema] synced $$MEDIA_GLUE -> artifacts/"; else echo "[asciinema] no media-pack glue to sync"; fi;
 
 
 .SILENT: asciinema-fetch-player
@@ -75,11 +88,8 @@ install:
 # This target is being used when user wants to record a single script.
 # Useful when you have a very specific observation you want to make.
 # Can this be used with python and bash scripts?
-# asciinema-record:
-# 	@command -v $(ASCIINEMA) >/dev/null || { echo "Install $(ASCIINEMA) to record (see README)"; exit 1; }
-# 	@mkdir -p artifacts
-# 	@echo "[asciinema] recording: $(ASCIINEMA_CMD) -> $(CAST_OUT)"
-# 	@$(ASCIINEMA) rec -c "$(ASCIINEMA_CMD)" $(CAST_OUT)
+ 
+ #make -f asciinema.mk asciinema-record ROOT=$(pwd) ART_DIR=$(pwd)"/artifacts"
 
 asciinema-record:
 	command -v asciinema >/dev/null || { echo "Install asciinema to record (see README)"; exit 1; }
@@ -87,11 +97,31 @@ asciinema-record:
 	echo "[asciinema] recording: $(ASCIINEMA_CMD) -> $(CAST_OUT)"
 	asciinema rec -c "$(ASCIINEMA_CMD)" "$(CAST_OUT)"
 
-asciinema-record2:
-	command -v asciinema >/dev/null || { echo "Install asciinema to record (see README)"; exit 1; }
-	mkdir -p artifacts
-	echo "[asciinema] recording: $(ASCIINEMA_CMD) -> $(CAST_OUT)"
+.PHONY: check-asciinema ensure-artifacts-dir validate-asciinema-vars asciinema-record2
+
+# make -f asciinema.mk validate-asciinema-vars \
+#   ASCIINEMA_CMD="echo hello" \
+#   CAST_OUT="artifacts/hello.cast"
+
+validate-asciinema-vars:
+	@test -n "$(ASCIINEMA_CMD)" || { echo "ASCIINEMA_CMD is required"; exit 1; }
+	@test -n "$(CAST_OUT)" || { echo "CAST_OUT is required"; exit 1; }
+
+check-asciinema:
+	@command -v asciinema >/dev/null || { echo "Install asciinema to record (see README)"; exit 1; }
+
+ensure-artifacts-dir:
+	@mkdir -p "$$(dirname "$(CAST_OUT)")"
+
+
+#make -f asciinema.mk asciinema-record2   ASCIINEMA_CMD="echo hello"   CAST_OUT="artifacts/hello.cast"
+
+
+asciinema-record2: validate-asciinema-vars check-asciinema ensure-artifacts-dir
+	@echo "[asciinema] recording: $(ASCIINEMA_CMD) -> $(CAST_OUT)"
 	./bin/run_with_meta.sh --out "$(CAST_OUT)" -- asciinema rec -c "$(ASCIINEMA_CMD)" "$(CAST_OUT)"
+	@test -f "$(CAST_OUT)" || { echo "ERROR: missing cast output: $(CAST_OUT)"; exit 1; }
+
 
 asciinema-play:
 	@command -v $(ASCIINEMA) >/dev/null || { echo "Install $(ASCIINEMA) to play (see README)"; exit 1; }

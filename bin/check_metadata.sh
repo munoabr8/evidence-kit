@@ -1,25 +1,72 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# This script is run in:
+
+#bin/check_all_metadata_json.sh
+# at line 25:    done < <(bin/check_metadata.sh --mode "$MODE" "$f" || true)
+
+SCRIPT_NAME="$(basename "$0")"
+
+usage() {
+  cat <<EOF
+Usage:
+  $SCRIPT_NAME --metadata FILE [--mode execution|legacy]
+
+Required:
+  --metadata FILE    Metadata file to validate
+
+Optional:
+  --mode MODE        Validation mode: execution or legacy
+  -h, --help         Show this help message
+
+Examples:
+  $SCRIPT_NAME --metadata artifacts/run.meta
+  $SCRIPT_NAME --mode execution --metadata artifacts/run.meta
+  $SCRIPT_NAME --mode legacy --metadata artifacts/run.meta
+EOF
+}
+
+die_json() {
+  local type="$1"
+  local message="$2"
+  local exit_code="${3:-1}"
+  echo "{\"type\":\"$type\",\"script\":\"$SCRIPT_NAME\",\"message\":\"$message\"}" >&2
+  exit "$exit_code"
+}
+
+
+
+
 MODE="execution"
 META=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --help|-h)
+      usage
+      exit 0
+      ;;
     --mode)
-      MODE="${2:-}"
+      [[ $# -ge 2 ]] || die_json "USAGE_ERROR" "--mode requires a value" 2
+      MODE="$2"
+      shift 2
+      ;;
+    --metadata)
+      [[ $# -ge 2 ]] || die_json "USAGE_ERROR" "--metadata requires a file path" 2
+      META="$2"
       shift 2
       ;;
     *)
-      META="$1"
-      shift
+      die_json "USAGE_ERROR" "Unknown argument: $1" 2
       ;;
   esac
 done
 
-if [[ -z "$META" ]]; then
-  echo '{"type":"USAGE_ERROR"}'
-  exit 2
+[[ -n "$META" ]] || die_json "USAGE_ERROR" "--metadata is required" 2
+
+if [[ "$MODE" != "execution" && "$MODE" != "legacy" ]]; then
+  die_json "USAGE_ERROR" "--mode must be execution or legacy" 2
 fi
 
 if [[ ! -f "$META" ]]; then
@@ -83,3 +130,7 @@ if [[ "$fail" -eq 0 ]]; then
 fi
 
 exit "$fail"
+
+
+
+
