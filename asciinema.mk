@@ -55,6 +55,15 @@ vendor-player:
 	@ln -sf $(ASSET_DIR)/asciinema-player.min.css $(ART_DIR)/asciinema-player.min.css
 	@ln -sf $(ASSET_DIR)/asciinema-glue.js $(ART_DIR)/asciinema-glue.js
 
+.PHONY: smoke
+
+
+smoke:
+	@echo "[smoke] run_with_meta"
+	@./tests/smoke_run_with_meta.sh
+	@echo "[smoke] check_metadata negative cases"
+	@./tests/smoke_check_metadata_negative.sh
+	@echo "PASS: all smoke tests passed"
 
 .PHONY: sync-player
 # sync-player:
