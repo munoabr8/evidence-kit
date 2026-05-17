@@ -1,25 +1,30 @@
 <!doctype html>
-<meta charset='utf-8'>
-<title>%%TITLE%%</title>
-<body style='margin:16px;font-family:system-ui,Segoe UI,Arial,sans-serif'>
+<meta charset="utf-8">
+<title>%%TITLE_ESC%%</title>
+
+<link rel="stylesheet" href="%%CSS%%">
+<script src="%%JS%%"></script>
+
+<body style="margin:16px;font-family:system-ui,Segoe UI,Arial,sans-serif">
 <h2>%%TITLE_ESC%%</h2>
-<link rel='stylesheet' href='%%CSS%%'>
-<script src='%%JS%%'></script>
 
-<!-- Load centralized glue (artifacts/asciinema-glue.js) if present; fall back to inline glue when necessary -->
+<div id="player"></div>
+
 <script>
-if (!document.querySelector('script[src="./asciinema-glue.js"]')) {
-	var s = document.createElement('script');
-	s.src = './asciinema-glue.js';
-	s.async = true;
-	document.head.appendChild(s);
-}
+window.addEventListener("load", () => {
+  if (!window.AsciinemaPlayer) {
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      "<pre style='color:red'>ERROR: AsciinemaPlayer API not found.</pre>"
+    );
+    return;
+  }
+
+  AsciinemaPlayer.create("%%CAST_SRC%%", document.getElementById("player"), {
+    preload: true,
+    rows: 40
+  });
+});
 </script>
-
-<asciinema-player src='%%CAST_SRC%%'
-                  preload
-                  rows="40"
-                  style='width:100%; height:100vh'></asciinema-player>
-
 
 </body>
