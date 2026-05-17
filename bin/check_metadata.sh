@@ -3,7 +3,7 @@ set -euo pipefail
 
 # This script is run in:
 
-#bin/check_all_metadata_json.sh
+#bin/check_all_metadata_txt.sh
 # at line 25:    done < <(bin/check_metadata.sh --mode "$MODE" "$f" || true)
 
 SCRIPT_NAME="$(basename "$0")"
