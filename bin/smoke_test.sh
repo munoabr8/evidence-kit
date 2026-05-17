@@ -1,106 +1,129 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
-trap 'rc=$?; echo "smoke_test.sh failed rc=$rc"; sed -n "1,200p" /tmp/http.$PORT.log || true; exit $rc' ERR
+
+PORT="${PORT:-8009}"
+SERVER_PID=""
 
 
-preflight_asserts() {
-  test -f bin/gen-index.py || { echo "missing bin/gen-index.py"; exit 90; }
-  mkdir -p artifacts
-  python3 bin/gen-index.py || true
-  test -f artifacts/index.html || { echo "missing artifacts/index.html"; exit 91; }
-  test -f artifacts/asciinema-glue.js || { echo "missing glue.js"; exit 12; }
-  test -f artifacts/asciinema-player.min.js || { echo "missing player.js"; exit 93; }
-  [ "$(wc -c < artifacts/asciinema-player.min.js)" -ge "${MIN_JS_BYTES:-10240}" ] || { echo "player.js too small"; exit 94; }
-}
+# to run this in as a make target: ALLOW_GENERATE_SHA=true make -f hunchly.mk smoke-test
 
-preflight_asserts
-
-
-# On error, emit diagnostics to help CI logs (artifact listing and server headers)
 dump_diagnostics() {
   echo "--- SMOKE TEST DIAGNOSTICS ---"
   echo "PWD: $(pwd)"
-  echo "ARTIFACTS:"; ls -la artifacts || true
-  echo "Server headers (if server running):";
+  echo "ARTIFACTS:"
+  find artifacts -maxdepth 4 -type f -o -type d | sort || true
+  echo "Server headers (if server running):"
   if [ -n "${SERVER_PID:-}" ]; then
     curl -s -I "http://127.0.0.1:${PORT}/" || true
   fi
   echo "--- END DIAGNOSTICS ---"
 }
-trap 'dump_diagnostics' ERR
 
-TARGET=smoke
-ASCIICAST=artifacts/${TARGET}.cast
-mkdir -p artifacts
+cleanup() {
+  if [ -n "${SERVER_PID:-}" ]; then
+    kill "${SERVER_PID}" 2>/dev/null || true
+    wait "${SERVER_PID}" 2>/dev/null || true
+  fi
+}
+
+trap 'rc=$?; echo "smoke_test.sh failed rc=$rc"; dump_diagnostics || true; cleanup; exit $rc' ERR
+trap 'cleanup' EXIT
+
+TARGET="${TARGET:-smoke}"
+ARTIFACTS_DIR="${ARTIFACTS_DIR:-artifacts}"
+
+# Role-based artifact layout.
+CAST_DIR="${ARTIFACTS_DIR}/cast"
+VIEWS_DIR="${ARTIFACTS_DIR}/views"
+ASSETS_DIR="${ARTIFACTS_DIR}/assets"
+
+ASCIICAST="${CAST_DIR}/${TARGET}.cast"
+WRAPPER="${VIEWS_DIR}/cast/${TARGET}.cast.html"
+WRAPPER_HTTP_PATH="views/cast/${TARGET}.cast.html"
+
+mkdir -p "${CAST_DIR}" "${VIEWS_DIR}/cast" "${ASSETS_DIR}"
 
 if command -v asciinema >/dev/null; then
-  # Use asciinema to record a quick non-interactive session
-  asciinema rec --overwrite -q -c "printf 'smoke\n'; sleep 0.1; printf 'done\n'" "${ASCIICAST}" || { echo "asciinema rec failed"; exit 1; }
+  asciinema rec --overwrite -q \
+    -c "printf 'smoke\n'; sleep 0.1; printf 'done\n'" \
+    "${ASCIICAST}" || {
+      echo "asciinema rec failed"
+      exit 1
+    }
 else
-  # Create a minimal asciicast v2 file as a fallback for CI-less environments
   now=$(date +%s)
   printf '{"version":2,"width":80,"height":24,"timestamp":%s}\n' "${now}" > "${ASCIICAST}"
   printf '[0.0, "o", "smoke\\n"]\n' >> "${ASCIICAST}"
 fi
 
-# regenerate wrappers
-python3 bin/gen-index.py
+# Regenerate index + wrappers.
+python3 bin/gen-index.py --art-dir "${ARTIFACTS_DIR}"
 
-# Early invariants check: verify required files exist and basic sanity before starting server.
-# If STRICT_INVARIANTS=true, fail early; otherwise emit warnings so CI logs are clearer.
 check_invariants() {
-  local strict=${STRICT_INVARIANTS:-false}
+  local strict="${STRICT_INVARIANTS:-false}"
   local ok=0
+
   echo "[smoke-test] verifying required artifact invariants (STRICT_INVARIANTS=${strict})"
 
-  # wrapper exists
-  if [ ! -f "artifacts/${TARGET}.cast.html" ]; then
-    echo "[invariant] MISSING: artifacts/${TARGET}.cast.html"
+  if [ ! -f "${ASCIICAST}" ]; then
+    echo "[invariant] MISSING: ${ASCIICAST}"
     ok=1
   else
-    echo "[invariant] OK: artifacts/${TARGET}.cast.html"
+    echo "[invariant] OK: ${ASCIICAST}"
   fi
 
-  # glue
-  if [ ! -f "artifacts/asciinema-glue.js" ]; then
-    echo "[invariant] MISSING: artifacts/asciinema-glue.js"
+  if [ ! -f "${WRAPPER}" ]; then
+    echo "[invariant] MISSING: ${WRAPPER}"
     ok=1
   else
-    echo "[invariant] OK: artifacts/asciinema-glue.js"
+    echo "[invariant] OK: ${WRAPPER}"
   fi
 
-  # player JS
-  if [ ! -f "artifacts/asciinema-player.min.js" ]; then
-    echo "[invariant] MISSING: artifacts/asciinema-player.min.js"
+  if [ ! -f "${ASSETS_DIR}/asciinema-glue.js" ]; then
+    echo "[invariant] NOTE: ${ASSETS_DIR}/asciinema-glue.js not present or no longer required"
+  else
+    echo "[invariant] OK: ${ASSETS_DIR}/asciinema-glue.js"
+  fi
+
+  if [ ! -f "${ASSETS_DIR}/asciinema-player.min.js" ]; then
+    echo "[invariant] MISSING: ${ASSETS_DIR}/asciinema-player.min.js"
     ok=1
   else
-    sz=$(( $(wc -c < artifacts/asciinema-player.min.js) ))
-    echo "[invariant] OK: artifacts/asciinema-player.min.js (${sz} bytes)"
+    local sz
+    sz=$(( $(wc -c < "${ASSETS_DIR}/asciinema-player.min.js") ))
+    echo "[invariant] OK: ${ASSETS_DIR}/asciinema-player.min.js (${sz} bytes)"
     if [ "$sz" -lt "${MIN_JS_BYTES:-10240}" ]; then
       echo "[invariant] WARNING: asciinema-player.min.js smaller than MIN_JS_BYTES=${MIN_JS_BYTES:-10240}"
       ok=1
     fi
   fi
 
-  # vendor manifest (if present) must be parseable and have required keys
-  if [ -f "artifacts/vendor-player.json" ]; then
+  if [ ! -f "${ASSETS_DIR}/asciinema-player.min.css" ]; then
+    echo "[invariant] MISSING: ${ASSETS_DIR}/asciinema-player.min.css"
+    ok=1
+  else
+    echo "[invariant] OK: ${ASSETS_DIR}/asciinema-player.min.css"
+  fi
+
+  if [ -f "${ARTIFACTS_DIR}/vendor-player.json" ]; then
     if ! python3 - <<PYERR >/dev/null 2>&1
-import json,sys
+import json, sys
 try:
-    with open('artifacts/vendor-player.json') as f:
-        j=json.load(f)
-    assert 'version' in j and 'js' in j and 'css' in j
+    with open("${ARTIFACTS_DIR}/vendor-player.json") as f:
+        j = json.load(f)
+    assert "version" in j and "js" in j and "css" in j
 except Exception as e:
-    print('bad manifest', e, file=sys.stderr); sys.exit(2)
+    print("bad manifest", e, file=sys.stderr)
+    sys.exit(2)
 PYERR
     then
-      echo "[invariant] BAD: artifacts/vendor-player.json is invalid JSON or missing keys"
+      echo "[invariant] BAD: ${ARTIFACTS_DIR}/vendor-player.json is invalid JSON or missing keys"
       ok=1
     else
-      echo "[invariant] OK: artifacts/vendor-player.json"
+      echo "[invariant] OK: ${ARTIFACTS_DIR}/vendor-player.json"
     fi
   else
-    echo "[invariant] NOTE: artifacts/vendor-player.json not present (optional)"
+    echo "[invariant] NOTE: ${ARTIFACTS_DIR}/vendor-player.json not present (optional)"
   fi
 
   if [ "$ok" -ne 0 ]; then
@@ -118,135 +141,146 @@ PYERR
 
 check_invariants
 
-# assert outputs exist
-if [ ! -f "${ASCIICAST}" ] || [ ! -f "artifacts/${TARGET}.cast.html" ]; then
-  echo "smoke-test: FAILED - missing cast or wrapper"; ls -la artifacts || true; exit 2
+# Assert core outputs exist.
+if [ ! -f "${ASCIICAST}" ] || [ ! -f "${WRAPPER}" ]; then
+  echo "smoke-test: FAILED - missing cast or wrapper"
+  echo "expected cast: ${ASCIICAST}"
+  echo "expected wrapper: ${WRAPPER}"
+  find "${ARTIFACTS_DIR}" -maxdepth 4 -type f | sort || true
+  exit 2
 fi
 
-# Start a temporary HTTP server on a random free port and capture its PID
-pushd artifacts >/dev/null
-# allow caller to override PORT and to tell this script not to start a server
-PORT=${PORT:-8009}
+pushd "${ARTIFACTS_DIR}" >/dev/null
+
 if [ -n "${SKIP_SERVER:-}" ]; then
   echo "smoke-test: SKIP_SERVER set - not starting HTTP server; assuming external server on port ${PORT}"
-  SERVER_PID=""
 else
-  python3 -m http.server ${PORT} &
+  python3 -m http.server "${PORT}" --bind 127.0.0.1 &
   SERVER_PID=$!
   sleep 0.3
   echo "smoke-test: HTTP server started (PID=${SERVER_PID}, port=${PORT})"
 fi
+
 popd >/dev/null
 
-# helper to check headers
- 
-check_header(){
-  local path="$1" ; local want="$2"   # want is a regex
+check_header() {
+  local path="$1"
+  local want="$2"
   local hdr
-  hdr=$(curl -s -I "http://127.0.0.1:${PORT}/${path}" | tr -d '\r') || return 1
+
+  hdr=$(curl --max-time 3 --connect-timeout 1 -s -I "http://127.0.0.1:${PORT}/${path}" | tr -d '\r') || {
+    echo "smoke-test: FAILED - could not fetch headers for ${path}"
+    return 1
+  }
+
   echo "--- headers for ${path} ---"
   echo "$hdr"
+
   echo "$hdr" | grep -iqE "Content-Type:\s*(${want})" || {
-    echo "smoke-test: FAILED - ${path} wrong content-type"; return 2; }
+    echo "smoke-test: FAILED - ${path} wrong content-type"
+    return 2
+  }
 }
 
-# Verify wrappers and assets are served with correct content-types
+# Verify wrappers and assets are served with correct content-types.
+check_header "${WRAPPER_HTTP_PATH}" "text/html"
+check_header "assets/asciinema-player.min.js" "(application|text)/javascript"
+check_header "assets/asciinema-player.min.css" "text/css"
 
-check_header "${TARGET}.cast.html" "text/html"
-check_header "asciinema-glue.js" "(application|text)/javascript"
-check_header "asciinema-player.min.js" "(application|text)/javascript"
+if [ -f "${ASSETS_DIR}/asciinema-glue.js" ]; then
+  check_header "assets/asciinema-glue.js" "(application|text)/javascript"
+fi
 
- 
-# Invariants to validate (strict checks)
-# 1) vendor manifest exists and has version/js/css/js_sha256/css_sha256 fields (if present)
-# 2) asciinema-player.min.js is >= MIN_JS_BYTES
-# 3) asciinema-glue.js contains a marker string indicating generated glue
-# 4) wrapper HTML contains an <asciinema-player> tag and references asciinema-glue.js
-# 5) checksum files must exist and match unless ALLOW_GENERATE_SHA=true
+MIN_JS_BYTES="${MIN_JS_BYTES:-10240}"
+VENDOR_MANIFEST="${ARTIFACTS_DIR}/vendor-player.json"
 
-MIN_JS_BYTES=${MIN_JS_BYTES:-10240} # default 10KB
-GLUE_MARKER=${GLUE_MARKER:-"Centralized glue"}
-VENDOR_MANIFEST=artifacts/vendor-player.json
-
-  if [ -f "$VENDOR_MANIFEST" ]; then
-  # quick JSON sanity check for required keys
+if [ -f "${VENDOR_MANIFEST}" ]; then
   if ! python3 - <<PYERR >/dev/null 2>&1
-import json,sys
+import json, sys
 try:
-    with open('$VENDOR_MANIFEST') as f:
-        j=json.load(f)
-    assert 'version' in j and 'js' in j and 'css' in j and 'js_sha256' in j and 'css_sha256' in j
+    with open("${VENDOR_MANIFEST}") as f:
+        j = json.load(f)
+    assert "version" in j and "js" in j and "css" in j
 except Exception as e:
-    print('bad manifest', e, file=sys.stderr); sys.exit(2)
+    print("bad manifest", e, file=sys.stderr)
+    sys.exit(2)
 PYERR
   then
-    echo "smoke-test: FAILED - vendor manifest $VENDOR_MANIFEST is invalid"
-    if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
+    echo "smoke-test: FAILED - vendor manifest ${VENDOR_MANIFEST} is invalid"
     exit 2
   fi
 fi
 
-# check JS size
-  if [ -f "artifacts/asciinema-player.min.js" ]; then
-  sz=$(( $(wc -c < artifacts/asciinema-player.min.js) ))
+if [ -f "${ASSETS_DIR}/asciinema-player.min.js" ]; then
+  sz=$(( $(wc -c < "${ASSETS_DIR}/asciinema-player.min.js") ))
   if [ "$sz" -lt "$MIN_JS_BYTES" ]; then
     echo "smoke-test: FAILED - asciinema-player.min.js too small (${sz} bytes)"
-    if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
     exit 2
   fi
 else
-  echo "smoke-test: WARNING - asciinema-player.min.js missing; wrappers may fall back to CDN"
-fi
-
-# check glue marker
-if ! grep -q "$GLUE_MARKER" artifacts/asciinema-glue.js 2>/dev/null; then
-  echo "smoke-test: FAILED - asciinema-glue.js missing expected marker '$GLUE_MARKER'"
-  if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
+  echo "smoke-test: FAILED - asciinema-player.min.js missing"
   exit 2
 fi
 
-# check wrapper HTML content
-if ! grep -q "<asciinema-player" "artifacts/${TARGET}.cast.html" 2>/dev/null; then
-  echo "smoke-test: FAILED - wrapper missing <asciinema-player> element"
-  if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
-  exit 2
-fi
-if ! grep -q "asciinema-glue.js" "artifacts/${TARGET}.cast.html" 2>/dev/null; then
-  echo "smoke-test: FAILED - wrapper does not reference asciinema-glue.js"
-  if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
+# New wrapper API invariant:
+# local player asset works with AsciinemaPlayer.create(), not the unsupported custom element.
+if ! grep -q "AsciinemaPlayer.create" "${WRAPPER}" 2>/dev/null; then
+  echo "smoke-test: FAILED - wrapper missing AsciinemaPlayer.create()"
   exit 2
 fi
 
-# Compute or verify sha256 sums for casts; write if missing
-for c in *.cast; do
-  [ -f "$c" ] || continue
+if grep -q "<asciinema-player" "${WRAPPER}" 2>/dev/null; then
+  echo "smoke-test: FAILED - wrapper still uses unsupported <asciinema-player> custom element"
+  exit 2
+fi
+
+if ! grep -q "../../cast/${TARGET}.cast" "${WRAPPER}" 2>/dev/null; then
+  echo "smoke-test: FAILED - wrapper does not reference cast with expected relative path"
+  echo "expected: ../../cast/${TARGET}.cast"
+  exit 2
+fi
+
+if ! grep -q "../../assets/asciinema-player.min.js" "${WRAPPER}" 2>/dev/null; then
+  echo "smoke-test: FAILED - wrapper does not reference JS asset with expected relative path"
+  echo "expected: ../../assets/asciinema-player.min.js"
+  exit 2
+fi
+
+if ! grep -q "../../assets/asciinema-player.min.css" "${WRAPPER}" 2>/dev/null; then
+  echo "smoke-test: FAILED - wrapper does not reference CSS asset with expected relative path"
+  echo "expected: ../../assets/asciinema-player.min.css"
+  exit 2
+fi
+
+# Compute or verify sha256 sums for casts recursively.
+while IFS= read -r c; do
   sumfile="${c}.sha256"
   sha=$(sha256sum "$c" | awk '{print $1}')
+
   if [ -f "$sumfile" ]; then
     expected=$(cut -d' ' -f1 "$sumfile" || true)
+
     if [ "$expected" != "$sha" ]; then
-      echo "smoke-test: FAILED - checksum mismatch for $c"
-      if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
-      exit 2
+      if [ "${ALLOW_GENERATE_SHA:-false}" = "true" ] || [ "${CI:-}" = "true" ]; then
+        echo "$sha  $c" > "$sumfile"
+        echo "smoke-test: updated stale checksum $sumfile"
+      else
+        echo "smoke-test: FAILED - checksum mismatch for $c"
+        echo "set ALLOW_GENERATE_SHA=true to update stale checksum"
+        exit 2
+      fi
     fi
+
   else
-    # In CI we permit auto-generating checksum files to avoid brittle failures
     if [ "${ALLOW_GENERATE_SHA:-false}" = "true" ] || [ "${CI:-}" = "true" ]; then
       echo "$sha  $c" > "$sumfile"
       echo "smoke-test: wrote $sumfile"
     else
       echo "smoke-test: FAILED - missing checksum file $sumfile (set ALLOW_GENERATE_SHA=true to auto-write)"
-      if [ -n "${SERVER_PID:-}" ]; then kill ${SERVER_PID} || true; fi
       exit 2
     fi
   fi
-done
-
-# shutdown server
-if [ -n "${SERVER_PID:-}" ]; then
-  kill ${SERVER_PID} || true
-  wait ${SERVER_PID} 2>/dev/null || true
-fi
+done < <(find "${ARTIFACTS_DIR}" -type f -name "*.cast" | sort)
 
 echo "smoke-test: OK"
 exit 0

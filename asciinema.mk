@@ -58,6 +58,8 @@ vendor-player:
 .PHONY: smoke
 
 
+#Any future change to provenance capture must keep make -f asciinema.mk smoke passing.
+
 smoke:
 	@echo "[smoke] run_with_meta"
 	@./tests/smoke_run_with_meta.sh
