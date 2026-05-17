@@ -109,7 +109,7 @@ exit_code="$(grep '^exit_code=' "$META" | sed 's/^exit_code=//' || true)"
 status="$(grep '^status=' "$META" | sed 's/^status=//' || true)"
 
 if [[ "$MODE" == "execution" ]]; then
-  if [[ -n "$artifact" && ! -f "$artifact" ]]; then
+  if [[ "$status" == "success" && -n "$artifact" && ! -f "$artifact" ]]; then
     emit "METADATA_ARTIFACT_NOT_FOUND" ",\"artifact\":\"$artifact\""
     fail=1
   fi

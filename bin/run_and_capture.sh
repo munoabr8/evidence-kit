@@ -1,37 +1,64 @@
 #!/usr/bin/env bash
-#./bin/run_and_capture.sh
+# ./bin/run_and_capture.sh
 set -euo pipefail
 
-# --- Config ---
+# Who calls this script:
+# hunchly.mk -> capture make target
 
 : "${ROOT:?missing ROOT}"
 : "${ART_DIR:?missing ART_DIR}"
 
-case "$ROOT" in /*) ;; *) echo "ROOT must be absolute" >&2; exit 2;; esac
-case "$ART_DIR" in /*) ;; *) echo "ART_DIR must be absolute" >&2; exit 2;; esac
+case "$ROOT" in
+  /*) ;;
+  *) echo "ROOT must be absolute" >&2; exit 2 ;;
+esac
 
- WF="${1:-${WF:-tests}}"
+case "$ART_DIR" in
+  /*) ;;
+  *) echo "ART_DIR must be absolute" >&2; exit 2 ;;
+esac
+
+WF="${1:-${WF:-smoke}}"
 PORT="${PORT:-8020}"
 
-mkdir -p "$ART_DIR"
+# Canonical artifact role directories
+ASSETS_DIR="$ART_DIR/assets"
+CAST_DIR="$ART_DIR/cast"
+FIXTURES_DIR="$ART_DIR/fixtures"
+LOGS_DIR="$ART_DIR/logs"
+METADATA_DIR="$ART_DIR/metadata"
+PLANS_DIR="$ART_DIR/plans"
+VIEWS_DIR="$ART_DIR/views"
 
-RAW_LOG="$ART_DIR/wf.raw.log"
-LOG="$ART_DIR/wf.log"
-HTML="$ART_DIR/wf.html"
-CAPTURE_PLAN="$ART_DIR/capture_plan.txt"
+mkdir -p \
+  "$ASSETS_DIR" \
+  "$CAST_DIR" \
+  "$FIXTURES_DIR" \
+  "$LOGS_DIR" \
+  "$METADATA_DIR" \
+  "$PLANS_DIR" \
+  "$VIEWS_DIR"
 
-echo "[capture] starting workflow '$WF' at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+RAW_LOG="$LOGS_DIR/wf.raw.log"
+LOG="$LOGS_DIR/wf.log"
+HTML="$VIEWS_DIR/wf.html"
+CAPTURE_PLAN="$PLANS_DIR/capture_plan.txt"
+
+timestamp_utc() {
+  date -u +%Y-%m-%dT%H:%M:%SZ
+}
+
+echo "[capture] starting workflow '$WF' at $(timestamp_utc)"
 
 # --- Execute the workflow and record output ---
-# env -i PATH="/usr/bin:/bin:/usr/local/bin" \
-#   bash -lc "./bin/run-wf $WF" 2>&1 | tee "$RAW_LOG"
-
 env -i \
   HOME="${HOME:-/Users/abrahammunoz}" \
   PATH="/usr/bin:/bin:/usr/local/bin:/opt/homebrew/bin:/opt/homebrew/sbin" \
   LANG="${LANG:-en_US.UTF-8}" \
   XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME:-/Users/abrahammunoz}/.config}" \
   ASCIINEMA_CONFIG_HOME="${ASCIINEMA_CONFIG_HOME:-${XDG_CONFIG_HOME:-${HOME:-/Users/abrahammunoz}/.config}/asciinema}" \
+  ROOT="$ROOT" \
+  ART_DIR="$ART_DIR" \
   bash -lc "./bin/run-wf $WF" 2>&1 | tee "$RAW_LOG"
 
 # --- Redact secrets ---
@@ -53,8 +80,11 @@ fi
 
 # --- Write capture plan for convenience ---
 {
-  echo "http://localhost:${PORT}/wf.html"
+  echo "http://localhost:${PORT}/views/wf.html"
 } > "$CAPTURE_PLAN"
 
+echo "[capture] done. Raw log: $RAW_LOG"
+echo "[capture] done. Redacted log: $LOG"
 echo "[capture] done. HTML log: $HTML"
-echo "[capture] open this in Chrome (forwarded port ${PORT}) for Hunchly capture."
+echo "[capture] done. Capture plan: $CAPTURE_PLAN"
+echo "[capture] open this in Chrome for Hunchly capture: http://localhost:${PORT}/views/wf.html"

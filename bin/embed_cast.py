@@ -1,10 +1,23 @@
 #!/usr/bin/env python3
 """Create a self-contained HTML wrapper for an asciinema .cast file.
 
+This script creates a fully self-contained HTML playback file for one asciinema .cast file.
+
+
+input:  smoke.cast
+output: smoke.embedded.html
+
+The output HTML contains:
+
+1. the asciinema player JavaScript inline
+2. the asciinema player CSS inline
+3. the .cast recording embedded as a base64 data URL
+4. an <asciinema-player> element that plays the embedded cast
+
 Usage: python3 bin/embed_cast.py <input.cast> <output.html>
 
 The output will inline asciinema-player JS and CSS (prefers local files under
-artifacts/, falls back to CDN), and embed the cast as a data: URL so the HTML
+artifacts/assets/, falls back to CDN), and embed the cast as a data: URL so the HTML
 is portable and can be captured by tools like Hunchly.
 """
 import sys
@@ -14,6 +27,7 @@ import urllib.request
 
 ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 ART = os.path.join(ROOT, 'artifacts')
+ASSETS = os.path.join(ART, 'assets')
 
 CDN_BASE = 'https://cdn.jsdelivr.net/npm/asciinema-player@3.11.1/dist'
 JS_CDN = f'{CDN_BASE}/asciinema-player.min.js'
@@ -65,8 +79,8 @@ def main():
         print('Input not found:', inp)
         sys.exit(3)
 
-    js_path = os.path.join(ART, 'asciinema-player.min.js')
-    css_path = os.path.join(ART, 'asciinema-player.min.css')
+    js_path = os.path.join(ASSETS, 'asciinema-player.min.js')
+    css_path = os.path.join(ASSETS, 'asciinema-player.min.css')
 
     js = read_local_or_fetch(js_path, JS_CDN)
     css = read_local_or_fetch(css_path, CSS_CDN)

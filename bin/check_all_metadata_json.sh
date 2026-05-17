@@ -10,9 +10,8 @@ tmp="$(mktemp)"
 
   first=1
 
-  for f in artifacts/*.meta.txt; do
-    [[ -e "$f" ]] || continue
-
+  shopt -s nullglob
+  for f in artifacts/metadata/*.meta.txt; do
     while IFS= read -r line; do
       [[ "$line" == *'"METADATA_OK"'* ]] && continue
 
@@ -22,11 +21,12 @@ tmp="$(mktemp)"
 
       printf '%s' "$line"
       first=0
-    done < <(bin/check_metadata.sh --mode "$MODE" "$f" || true)
+    done < <(bin/check_metadata.sh --mode "$MODE" --metadata "$f" || true)
   done
 
   echo ']}'
 } > "$tmp"
+
 
 python3 - "$tmp" <<'PY'
 import json

@@ -5,26 +5,36 @@ set -euo pipefail
 # Usage: ./bin/run-wf  [workflow]
 # or:    WF=build ./bin/run-wf
 
-WF="${1:-${WF:-tests}}"
+# Who calls this scritp:
+# bin/run_and_capture.sh
+
+
+
+WF="${1:-${WF:-smoke}}"
 echo "[wf] starting workflow '$WF' at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 case "$WF" in
 
   # Does the test workflow all unit tests or can it just be 
   # a smoke test? It would depend on what target was being executed.
-  tests)
+  smoke)
     echo "[wf] running tests"
     make -f hunchly.mk smoke-test
+    make -f hunchly.mk smoke-playback
+
     # Tests should assert basic pre-conditions or unit behavior?
     #pytest -q || true
     ;;
+  test) 
+      pytest -q  
+    ;;  
   build)
     echo "[wf] building project"
-    make build || true
+    make build  
     ;;
   ci)
     echo "[wf] CI smoke test"
-    ./scripts/ci_smoke.sh || true
+    ./scripts/ci_smoke.sh  
     ;;
   analysis)
     echo "[wf] static analysis"

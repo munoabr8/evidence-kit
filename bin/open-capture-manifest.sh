@@ -2,7 +2,7 @@
 #./bin/open-capture-manifest.sh
 set -euo pipefail
 
-PLAN="${1:-artifacts/capture_plan.txt}"
+PLAN="${1:-artifacts/plans/capture_plan.txt}"
 
 if [[ ! -f "$PLAN" ]]; then
   echo "[open] capture plan not found: $PLAN" >&2
