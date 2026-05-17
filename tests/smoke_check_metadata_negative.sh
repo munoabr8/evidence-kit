@@ -1,21 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-META="artifacts/hello.cast.meta.txt"
+CAST="artifacts/cast/hello.cast"
+META="artifacts/metadata/hello.cast.meta.txt"
 
-rm -f artifacts/hello.cast "$META"
+FIXTURE_META_DIR="artifacts/fixtures/metadata"
+MISSING_STATUS="$FIXTURE_META_DIR/missing_status.meta.txt"
+BAD_STATUS="$FIXTURE_META_DIR/bad_status.meta.txt"
+BAD_EXIT_CODE="$FIXTURE_META_DIR/bad_exit_code.meta.txt"
+
+mkdir -p "$(dirname "$CAST")" "$(dirname "$META")" "$FIXTURE_META_DIR"
+
+rm -f "$CAST" "$META" "$MISSING_STATUS" "$BAD_STATUS" "$BAD_EXIT_CODE"
 
 ./bin/run_with_meta.sh \
-  --out artifacts/hello.cast \
-  -- asciinema rec -c "echo hello" artifacts/hello.cast
+  --out "$CAST" \
+  -- asciinema rec -c "echo hello" "$CAST"
 
 ./bin/check_metadata.sh --metadata "$META"
 
 # Missing status field
-grep -v '^status=' "$META" > artifacts/missing_status.meta.txt
+grep -v '^status=' "$META" > "$MISSING_STATUS"
 
 set +e
-output="$(./bin/check_metadata.sh --metadata artifacts/missing_status.meta.txt)"
+output="$(./bin/check_metadata.sh --metadata "$MISSING_STATUS")"
 exit_code=$?
 set -e
 
@@ -24,10 +32,10 @@ echo "$output" | grep -q '"type":"METADATA_MISSING_FIELD"'
 echo "$output" | grep -q '"field":"status"'
 
 # Bad status value
-sed 's/^status=.*/status=maybe/' "$META" > artifacts/bad_status.meta.txt
+sed 's/^status=.*/status=maybe/' "$META" > "$BAD_STATUS"
 
 set +e
-output="$(./bin/check_metadata.sh --metadata artifacts/bad_status.meta.txt)"
+output="$(./bin/check_metadata.sh --metadata "$BAD_STATUS")"
 exit_code=$?
 set -e
 
@@ -35,10 +43,10 @@ test "$exit_code" -eq 1
 echo "$output" | grep -q '"type":"METADATA_BAD_STATUS"'
 
 # Bad exit code value
-sed 's/^exit_code=.*/exit_code=banana/' "$META" > artifacts/bad_exit_code.meta.txt
+sed 's/^exit_code=.*/exit_code=banana/' "$META" > "$BAD_EXIT_CODE"
 
 set +e
-output="$(./bin/check_metadata.sh --metadata artifacts/bad_exit_code.meta.txt)"
+output="$(./bin/check_metadata.sh --metadata "$BAD_EXIT_CODE")"
 exit_code=$?
 set -e
 

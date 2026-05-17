@@ -14,7 +14,7 @@ set -euo pipefail
 #   - execute command exactly once
 #   - capture raw exit code
 # Post:
-#   - write FILE.meta.txt
+#   - write metadata sidecar under artifacts/metadata/
 #   - include command, cwd, timestamp, git info, artifact path, raw exit code, status
 #   - exit according to configured exit policy
 
@@ -65,7 +65,7 @@ Examples:
 
 Metadata:
   For --out artifacts/run.cast, metadata is written to:
-    artifacts/run.cast.meta.txt
+  artifacts/metadata/run.cast.meta.txt
 EOF
 }
 
@@ -168,7 +168,13 @@ require_command pwd
 mkdir -p "$(dirname "$OUT")"
 
 artifact="$(absolute_path_for_output "$OUT")"
-meta="${OUT}.meta.txt"
+
+ART_DIR="${ART_DIR:-artifacts}"
+META_DIR="${META_DIR:-$ART_DIR/metadata}"
+
+mkdir -p "$META_DIR"
+
+meta="$META_DIR/$(basename "$OUT").meta.txt"
 
 timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 cwd="$(pwd -P)"
