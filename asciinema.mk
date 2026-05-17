@@ -166,16 +166,39 @@ asciinema-embed:
 	@mkdir -p artifacts
 	@if [ -f "$(FILE)" ]; then \
 		BASENAME=$$(basename "$(FILE)"); \
+		cp "$(FILE)" "artifacts/$$BASENAME"; \
 		HTML=artifacts/$$BASENAME.html; \
-		printf '%s\n' "<!doctype html><html><head><meta charset=\"utf-8\"><title>Asciinema</title></head><body>" > "$$HTML"; \
-		printf '%s\n' '<script src="https://asciinema.org/a/player.js"></script>' >> "$$HTML"; \
-		printf '<asciinema-player src="./%s" preload></asciinema-player>\n' "$$BASENAME" >> "$$HTML"; \
-		printf '%s\n' '</body></html>' >> "$$HTML"; \
+		printf '%s\n' '<!doctype html>' > "$$HTML"; \
+		printf '%s\n' '<html>' >> "$$HTML"; \
+		printf '%s\n' '<head>' >> "$$HTML"; \
+		printf '%s\n' '<meta charset="utf-8">' >> "$$HTML"; \
+		printf '%s\n' '<title>Asciinema</title>' >> "$$HTML"; \
+		printf '%s\n' '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/asciinema-player@3.11.1/dist/bundle/asciinema-player.css">' >> "$$HTML"; \
+		printf '%s\n' '<script src="https://cdn.jsdelivr.net/npm/asciinema-player@3.11.1/dist/bundle/asciinema-player.min.js"></script>' >> "$$HTML"; \
+		printf '%s\n' '</head>' >> "$$HTML"; \
+		printf '%s\n' '<body style="margin:16px;font-family:system-ui,Segoe UI,Arial,sans-serif">' >> "$$HTML"; \
+		printf '%s\n' '<h2>'"$$BASENAME"'</h2>' >> "$$HTML"; \
+		printf '%s\n' '<div id="player"></div>' >> "$$HTML"; \
+		printf '%s\n' '<script>' >> "$$HTML"; \
+		printf '%s\n' 'window.addEventListener("load", () => {' >> "$$HTML"; \
+		printf '%s\n' '  if (!window.AsciinemaPlayer) {' >> "$$HTML"; \
+		printf '%s\n' '    document.body.insertAdjacentHTML("beforeend", "<pre style=\"color:red\">ERROR: AsciinemaPlayer API not found.</pre>");' >> "$$HTML"; \
+		printf '%s\n' '    return;' >> "$$HTML"; \
+		printf '%s\n' '  }' >> "$$HTML"; \
+		printf '%s\n' '  AsciinemaPlayer.create("./'"$$BASENAME"'", document.getElementById("player"), {' >> "$$HTML"; \
+		printf '%s\n' '    preload: true' >> "$$HTML"; \
+		printf '%s\n' '  });' >> "$$HTML"; \
+		printf '%s\n' '});' >> "$$HTML"; \
+		printf '%s\n' '</script>' >> "$$HTML"; \
+		printf '%s\n' '</body>' >> "$$HTML"; \
+		printf '%s\n' '</html>' >> "$$HTML"; \
 		echo "[asciinema] wrote $$HTML"; \
 	else \
 		echo "no file: $(FILE)"; exit 1; \
 	fi
 
+
+	
 .PHONY: asciinema-embed-selfcontained
 asciinema-embed-selfcontained:
 	@mkdir -p artifacts
