@@ -2,7 +2,7 @@
 
 - debug_case_id:  
 - date:  
-- issue_key: 
+- issue_key:  
 - project:  
 
 ## Assumption
@@ -10,8 +10,8 @@
  
 ## Test
 
-- command 
-- cwd:
+- command: 
+- cwd:  
 - git_branch:
 - git_commit:
 
@@ -31,6 +31,7 @@
  
 - case_record:
  
+
 - issue_key:
  
 
@@ -39,4 +40,4 @@
  
 ## Lesson
 
-- future_first_check:
+- future_first_check:  
