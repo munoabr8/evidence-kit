@@ -44,7 +44,8 @@ Old assumption:
 Runtime metadata files are stored as flat sidecars under `artifacts/*.meta.txt`.
 
 Evidence:
-`bin/check_all_metadata_json.sh` previously scanned `artifacts/*.meta.txt`.
+
+`bin/check_all_metadata_txt.sh` previously scanned `artifacts/*.meta.txt`.
 
 Current decision:
 Runtime provenance metadata belongs under `artifacts/metadata/`.
@@ -56,7 +57,7 @@ Test:
 `make -f asciinema.mk smoke`
 
 Resolution:
-Updated `bin/check_all_metadata_json.sh` to scan `artifacts/metadata/*.meta.txt`.
+Updated `bin/check_all_metadata_txt.sh` to scan `artifacts/metadata/*.meta.txt`.
 
 
 
@@ -79,7 +80,7 @@ Invariant:
 Artifact existence is required only when `status=success`.
 
 Test:
-`./bin/check_all_metadata_json.sh`
+`./bin/check_all_metadata_txt.sh`
 
 Resolution:
 Updated metadata validation so missing artifacts are violations only for successful runs.
