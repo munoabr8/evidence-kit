@@ -27,12 +27,12 @@ Workflow:
 
 4. Move issue to In Progress
    jira issue move KAN-X "In Progress"
-
-
+ 
 Optional:
    5. Add comment linking the case
 
       jira issue comment add KAN-X "Created debug case: cases/debug_case_<caseNumber>.md"
+
 
 6. Move issue to In Review
    jira issue move KAN-X "In Review"
@@ -44,7 +44,7 @@ Optional:
 Required:
 8. Add completion comment with commit hash
    jira issue comment add KAN-X "Completed. Commit: $(git rev-parse --short HEAD)"
-
+ 
 9. Move issue to Done
    jira issue move KAN-X "Done"
  
