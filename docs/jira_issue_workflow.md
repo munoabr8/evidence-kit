@@ -14,40 +14,80 @@ Jira site:
 https://evidencekit.atlassian.net/
 
 Workflow:
-1. Verify Jira CLI access
+0. Verify Jira CLI access
    jira me
    jira issue list
 
-2. Create issue
+
+## Optional Recording Artifact Guidance
+
+Recording is optional, not required for every Jira issue.
+
+Before recording, check:
+
+- Use standalone asciinema for quick CLI replay.
+- Use full Evidence Kit capture when provenance, structure, indexing, and later review matter.
+- Use screen recording when GUI/browser/editor context matters.
+- Use no recording when recording would increase debugging friction.
+
+Full guidance lives in:
+
+`docs/evidence_capture.md`
+
+Rule of thumb:
+
+Record only when replay value exceeds capture friction.
+
+
+
+asciinema rec artifacts/cast/jira_workflow_smoke.cast
+pwd
+jira me
+jira issue list
+git status
+exit
+
+
+
+Optional quick playback:
+
+asciinema play artifacts/cast/jira_workflow_smoke.cast
+
+
+
+
+1. Create issue
    jira issue create
 
-3. View/list issue
-   jira issue list
-   jira issue view KAN-X
+Optional:
+   2. View/list issue
+      jira issue list
+      jira issue view KAN-X
 
-4. Move issue to In Progress
+3. Move issue to In Progress
    jira issue move KAN-X "In Progress"
  
-Optional:
-   5. Add comment linking the case
+ Optional:
+   4. Add comment linking the case
 
       jira issue comment add KAN-X "Created debug case: cases/debug_case_<caseNumber>.md"
 
 
-6. Move issue to In Review
+5. Move issue to In Review
    jira issue move KAN-X "In Review"
 
-7. Commit implementation
+6. Commit implementation
    git add <files>
    git commit -m "<atomic commit message>"
 
 Required:
-8. Add completion comment with commit hash
+7. Add completion comment with commit hash
    jira issue comment add KAN-X "Completed. Commit: $(git rev-parse --short HEAD)"
- 
-9. Move issue to Done
+
+8. Move issue to Done
    jira issue move KAN-X "Done"
  
+
 Acceptance criteria:
 - docs/jira_issue_workflow.md exists.
 - It includes Jira CLI preconditions.
