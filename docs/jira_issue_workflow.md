@@ -44,15 +44,14 @@ asciinema rec artifacts/cast/jira_workflow_smoke.cast
 pwd
 jira me
 jira issue list
-git status
+git status(go to step 6 after)
 exit
 
 
 
 Optional quick playback:
-
+(if no artifacts/cast dir, you will need to make it)
 asciinema play artifacts/cast/jira_workflow_smoke.cast
-
 
 
 
