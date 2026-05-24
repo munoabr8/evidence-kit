@@ -3,6 +3,17 @@ Purpose
 Decide when to use asciinema, screen recording, full-blown evidence capability capture ,or no recording.
 
 
+Before recording, check:
+
+- Use standalone asciinema for quick CLI replay.
+- Use full Evidence Kit capture when provenance, structure, indexing, and later review matter.
+- Use screen recording when GUI/browser/editor context matters.
+- Use no recording when recording would increase debugging friction.
+
+Rule of thumb:
+
+Record only when replay value exceeds capture friction.
+
 
 
 

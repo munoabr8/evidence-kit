@@ -23,22 +23,6 @@ Workflow:
 
 Recording is optional, not required for every Jira issue.
 
-Before recording, check:
-
-- Use standalone asciinema for quick CLI replay.
-- Use full Evidence Kit capture when provenance, structure, indexing, and later review matter.
-- Use screen recording when GUI/browser/editor context matters.
-- Use no recording when recording would increase debugging friction.
-
-Full guidance lives in:
-
-`docs/evidence_capture.md`
-
-Rule of thumb:
-
-Record only when replay value exceeds capture friction.
-
-
 
 asciinema rec artifacts/cast/jira_workflow_smoke.cast
 pwd
