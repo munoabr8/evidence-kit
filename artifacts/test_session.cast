@@ -1,1 +1,10 @@
-{"version": 2, "width": 204, "height": 60, "timestamp": 1780329662, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+{"version": 2, "width": 204, "height": 60, "timestamp": 1780330807, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.018572, "o", "[Gatekeeper] Verifying working directory and HEAD against manifest...\r\n"]
+[0.074865, "o", "--------------------------------------------------\r\n"]
+[0.105541, "o", "[OK] Verified Active Blob: docs/jira_issue_workflow.md\r\n"]
+[0.139432, "o", "[OK] Verified Active Blob: scripts/anchor.sh\r\n"]
+[0.164998, "o", "[OK] Verified Active Blob: scripts/verify-state.sh\r\n"]
+[0.191182, "o", "[OK] Verified Active Blob: Makefile\r\n"]
+[0.216727, "o", "[OK] Verified Active Blob: docs/main.tex\r\n"]
+[0.24404, "o", "[WARN] Environmental Drift: 'artifacts/test_session.cast' has uncommitted local mutations.\r\n[OK] Verified Active Blob: artifacts/test_session.cast\r\n"]
+[0.256599, "o", "--------------------------------------------------\r\n[PASS] Invariants Hold: Manifest integrity verified at HEAD (6d842af).\r\n"]
