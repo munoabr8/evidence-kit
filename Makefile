@@ -16,7 +16,8 @@ verify: prep-manifest
 	asciinema rec --overwrite --command="bash -n scripts/*.sh" artifacts/test_session.cast
 	
 	@chmod +x scripts/verify-state.sh
-	./scripts/verify-state.sh --check-invariants
+	asciinema rec --overwrite --command="./scripts/verify-state.sh --check-invariants" artifacts/test_session2.cast
+
 
 
 # Transition: Move to In-Review (Only if verification passes)
