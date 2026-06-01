@@ -26,16 +26,37 @@ if [[ ! -f "$manifest_file" ]]; then
     exit 1
 fi
 
-# New: State Synchronization Check (Assert tracking authority alignment)
+# Assert tracking authority alignment
 echo "[P] Verifying tracking authority state for $ticket_id..."
 if ! command -v jira &> /dev/null; then
     echo "[P] Precondition FAILED: 'jira' CLI tool is not installed or in PATH."
     exit 1
 fi
 
-CURRENT_STATUS=$(jira issue view "$ticket_id" --json 2>/dev/null | jq -r '.fields.status.name' 2>/dev/null)
+if ! command -v jq &> /dev/null; then
+    echo "[P] Precondition FAILED: 'jq' tool is not installed or in PATH."
+    exit 1
+fi
+
+# Capture raw response to handle network/auth failures vs. payload structure
+RAW_RESPONSE=$(jira issue view "$ticket_id" --raw 2>&1)
+if [[ $? -ne 0 ]]; then
+    echo "[P] Precondition FAILED: 'jira' CLI execution encountered an error."
+    echo "    Details: $RAW_RESPONSE"
+    exit 1
+fi
+
+if [[ $? -ne 0 ]]; then
+    echo "[P] Precondition FAILED: 'jira' CLI execution encountered an error."
+    echo "    Details: $RAW_RESPONSE"
+    exit 1
+fi
+
+CURRENT_STATUS=$(echo "$RAW_RESPONSE" | jq -r '.fields.status.name' 2>/dev/null)
+
 if [[ -z "$CURRENT_STATUS" || "$CURRENT_STATUS" == "null" ]]; then
-    echo "[P] Precondition FAILED: Unable to fetch status for ticket $ticket_id. Verify connection/auth."
+    echo "[P] Precondition FAILED: Unable to resolve status field from Jira payload."
+    echo "    Raw Payload: $RAW_RESPONSE"
     exit 1
 fi
 
