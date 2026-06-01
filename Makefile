@@ -3,12 +3,9 @@
 .PHONY: verify review complete
 
 
-# Helper to ensure the dynamic entry is cleanly added without duplication
 # Helper to ensure the dynamic entry is cleanly added exactly once
 prep-manifest:
 	@grep -qxF "artifacts/test_session.cast" evidence-manifest.txt || echo "artifacts/test_session.cast" >> evidence-manifest.txt
-
-
 
 
 # Gatekeeper: Forces active runtime capture and invariant verification
