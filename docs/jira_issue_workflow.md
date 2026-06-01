@@ -13,6 +13,13 @@ Preconditions:
 Jira site:
 https://evidencekit.atlassian.net/
 
+
+
+
+
+
+
+
 Workflow:
 0. Verify Jira CLI access
    jira me
@@ -25,6 +32,7 @@ Recording is optional, not required for every Jira issue.
 
 
 asciinema rec artifacts/cast/jira_workflow_smoke.cast
+
 pwd
 jira me
 jira issue list
@@ -36,6 +44,13 @@ exit
 Optional quick playback:
 (if no artifacts/cast dir, you will need to make it)
 asciinema play artifacts/cast/jira_workflow_smoke.cast
+
+
+## Naming during issue generation
+The Summary is a command. (It tells you what action you need to take).
+
+The Situation is history. (It tells you what the system looks like before you act).
+
 
 
 
@@ -79,3 +94,8 @@ Acceptance criteria:
 - It explains that JIRA_API_TOKEN must be exported but does not include the real token.
 - It includes the commit-hash comment step.
 - It can be followed manually in under 10 minutes.
+
+
+
+
+
