@@ -1,0 +1,7 @@
+
+# Files required for formal evidence verification
+docs/jira_issue_workflow.md
+scripts/anchor.sh
+scripts/verify-state.sh
+Makefile
+docs/main.tex
