@@ -2,10 +2,25 @@
 
 .PHONY: verify review complete
 
-# Gatekeeper: Forces invariant verification
-verify:
+
+# Helper to ensure the dynamic entry is cleanly added without duplication
+# Helper to ensure the dynamic entry is cleanly added exactly once
+prep-manifest:
+	@grep -qxF "artifacts/test_session.cast" evidence-manifest.txt || echo "artifacts/test_session.cast" >> evidence-manifest.txt
+
+
+
+
+# Gatekeeper: Forces active runtime capture and invariant verification
+verify: prep-manifest
+	@echo "====== Generating Active Workspace Evidence ======"
+	@mkdir -p artifacts
+	# Record actual bash syntax validation 
+	asciinema rec --overwrite --command="bash -n scripts/*.sh" artifacts/test_session.cast
+	
 	@chmod +x scripts/verify-state.sh
 	./scripts/verify-state.sh --check-invariants
+
 
 # Transition: Move to In-Review (Only if verification passes)
 # Exxample make review TICKET=KAN-16

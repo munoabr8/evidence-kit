@@ -15,6 +15,12 @@ if [[ -z "$ticket_id" ]]; then
     exit 1
 fi
 
+# New: Enforce valid_id(TICKET_ID) schema validation
+if [[ ! "$ticket_id" =~ ^[A-Z]+-[0-9]+$ ]]; then
+    echo "[P] Precondition FAILED: Ticket ID format is invalid."
+    exit 1
+fi
+
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
     echo "[P] Precondition FAILED: Must be inside a Git repository."
     exit 1
@@ -25,6 +31,28 @@ if [[ ! -f "$manifest_file" ]]; then
     echo "[P] Precondition FAILED: $manifest_file not found at repo root."
     exit 1
 fi
+
+# New: Capture M = read(manifest) into an immutable in-memory array
+# Filters out comments and blank spaces while stripping Windows CRLF endings
+declare -r -a M=($(awk '!/^[[:space:]]*#/ && !/^[[:space:]]*$/ {gsub(/\r/, ""); print}' "$manifest_file"))
+
+# New: Validate safe_path(f) and size(f) > 0 for all f ∈ M before any mutations occur
+for file in "${M[@]}"; do
+    # safe_path checking (blocks absolute, parent traversal, and VCS leaks)
+    if [[ "$file" =~ ^/ || "$file" =~ \.\./ || "$file" =~ ^\.git/ ]]; then
+        echo "[P] Precondition FAILED: Unsafe path detected -> $file"
+        exit 1
+    fi
+    
+    # size checking (ensures non-empty file blob)
+    if [[ ! -f "$file" ]]; then
+        echo "[P] Precondition FAILED: Evidence file missing -> $file"
+        exit 1
+    elif [[ ! -s "$file" ]]; then
+        echo "[P] Precondition FAILED: Empty file blob violation -> $file"
+        exit 1
+    fi
+done
 
 # Assert tracking authority alignment
 echo "[P] Verifying tracking authority state for $ticket_id..."
@@ -46,12 +74,6 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
-if [[ $? -ne 0 ]]; then
-    echo "[P] Precondition FAILED: 'jira' CLI execution encountered an error."
-    echo "    Details: $RAW_RESPONSE"
-    exit 1
-fi
-
 CURRENT_STATUS=$(echo "$RAW_RESPONSE" | jq -r '.fields.status.name' 2>/dev/null)
 
 if [[ -z "$CURRENT_STATUS" || "$CURRENT_STATUS" == "null" ]]; then
@@ -66,21 +88,16 @@ if [[ "$CURRENT_STATUS" != "$EXPECTED_STATUS" ]]; then
     exit 1
 fi
 
-# Helper function to verify invariant state
+# Helper function to verify invariant state against the immutable snapshot M
 verify_manifest_against_head() {
     local all_met=true
     local file
-    while IFS= read -r file || [[ -n "$file" ]]; do
-        file="${file%$'\r'}" # Trim CRLF
-        [[ "$file" =~ ^[[:space:]]*# ]] && continue
-        [[ -z "$file" ]] && continue
-        
+    for file in "${M[@]}"; do
         if ! git cat-file -e "HEAD:$file" 2>/dev/null; then
             echo "[FAIL] Invariant Violation: $file is not tracked in HEAD."
             all_met=false
         fi
-    done < "$manifest_file"
-    
+    done
     [[ "$all_met" == true ]] && return 0 || return 1
 }
 
@@ -94,21 +111,13 @@ git add -- "$manifest_file" || {
     exit 1
 }
 
-while IFS= read -r file || [[ -n "$file" ]]; do
-    file="${file%$'\r'}"
-    [[ "$file" =~ ^[[:space:]]*# ]] && continue
-    [[ -z "$file" ]] && continue
-
-    if [[ ! -e "$file" ]]; then
-        echo "[C] Manifest file missing from working tree: $file"
-        exit 1
-    fi
-
+# Iterate directly through the verified, immutable snapshot M
+for file in "${M[@]}"; do
     if ! git add -f -- "$file"; then
-        echo "[C] Failed to stage manifest file: $file"
+        echo "[C] Failed to stage verified file: $file"
         exit 1
     fi
-done < "$manifest_file"
+done
 
 # Handle the No-Op / Idempotency check safely
 if git diff --cached --quiet; then
@@ -131,6 +140,7 @@ if ! git commit -m "$commit_message"; then
     exit 1
 fi
 
+# C.3 / Q: Atomically capture content-addressed hash identifier
 commit_hash="$(git rev-parse --short HEAD)"
 
 # 3. Postcondition (Q)
