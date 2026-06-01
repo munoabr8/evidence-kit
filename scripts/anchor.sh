@@ -1,49 +1,105 @@
-#!/bin/bash
-# anchor.sh - Executes the Evidence Anchoring Contract
+#!/usr/bin/env bash
+# scripts/anchor.sh - Executes the Evidence Anchoring Contract
 # Formalized: { P } anchor.sh { Q }
 
-TICKET_ID=$1
+set -u
+set -o pipefail
+
+manifest_file="evidence-manifest.txt"
+ticket_id="${1:-}"
 
 # 1. Validate Precondition (P)
-if [ -z "$TICKET_ID" ]; then
+if [[ -z "$ticket_id" ]]; then
     echo "Usage: ./scripts/anchor.sh [JIRA-TICKET-ID]"
     exit 1
 fi
 
-if [ ! -d ".git" ] || [ ! -f "evidence-manifest.txt" ]; then
-    echo "[P] Precondition FAILED: Must be in root of a Git repo with evidence-manifest.txt"
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
+    echo "[P] Precondition FAILED: Must be inside a Git repository."
+    exit 1
+}
+cd "$repo_root" || exit 1
+
+if [[ ! -f "$manifest_file" ]]; then
+    echo "[P] Precondition FAILED: $manifest_file not found at repo root."
     exit 1
 fi
 
-echo "[P] Precondition Met: Contract initiated for $TICKET_ID."
+# Helper function to verify invariant state
+verify_manifest_against_head() {
+    local all_met=true
+    local file
+    while IFS= read -r file || [[ -n "$file" ]]; do
+        file="${file%$'\r'}" # Trim CRLF
+        [[ "$file" =~ ^[[:space:]]*# ]] && continue
+        [[ -z "$file" ]] && continue
+        
+        if ! git cat-file -e "HEAD:$file" 2>/dev/null; then
+            echo "[FAIL] Invariant Violation: $file is not tracked in HEAD."
+            all_met=false
+        fi
+    done < "$manifest_file"
+    
+    [[ "$all_met" == true ]] && return 0 || return 1
+}
+
+echo "[P] Precondition Met: Contract initiated for $ticket_id."
 
 # 2. Command (C)
-echo "[C] Executing staging and commit..."
+echo "[C] Staging manifest and evidence files..."
 
-# Recursive staging: ∀ f ∈ manifest : git add f
-xargs git add -f < evidence-manifest.txt
+git add -- "$manifest_file" || {
+    echo "[C] Failed to stage $manifest_file."
+    exit 1
+}
 
-# Atomic commit: git commit -> hash
-# We capture the hash directly from git rev-parse for reliability
-git commit -m "Evidence snapshot for $TICKET_ID: $(date)" > /dev/null
-COMMIT_HASH=$(git rev-parse --short HEAD)
+while IFS= read -r file || [[ -n "$file" ]]; do
+    file="${file%$'\r'}"
+    [[ "$file" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "$file" ]] && continue
+
+    if [[ ! -e "$file" ]]; then
+        echo "[C] Manifest file missing from working tree: $file"
+        exit 1
+    fi
+
+    if ! git add -f -- "$file"; then
+        echo "[C] Failed to stage manifest file: $file"
+        exit 1
+    fi
+done < "$manifest_file"
+
+# Handle the No-Op / Idempotency check safely
+if git diff --cached --quiet; then
+    echo "[C] No new changes staged. Checking if current HEAD satisfies contract..."
+    if verify_manifest_against_head; then
+        commit_hash="$(git rev-parse --short HEAD)"
+        echo "[Q] Postcondition Met (Pre-existing state valid)."
+        echo "--- EVIDENCE ID: ${ticket_id}@${commit_hash} ---"
+        exit 0
+    else
+        echo "[Q] Postcondition FAILED: No changes staged, and HEAD is missing manifest files."
+        exit 1
+    fi
+fi
+
+# Proceed with commit if changes exist
+commit_message="Evidence snapshot for $ticket_id: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+if ! git commit -m "$commit_message"; then
+    echo "[C] Commit FAILED."
+    exit 1
+fi
+
+commit_hash="$(git rev-parse --short HEAD)"
 
 # 3. Postcondition (Q)
-# Verify Invariant: ∀ f ∈ manifest : f ∈ git_tree(hash)
-ALL_MET=true
-while read -r file; do
-    if ! git ls-tree -r HEAD --name-only | grep -q "$file"; then
-        echo "[FAIL] Invariant Violation: $file not found in HEAD."
-        ALL_MET=false
-    fi
-done < evidence-manifest.txt
-
-if [ "$ALL_MET" = true ]; then
-    EVIDENCE_ID="${TICKET_ID}@${COMMIT_HASH}"
+echo "[Q] Verifying manifest against committed HEAD..."
+if verify_manifest_against_head; then
+    evidence_id="${ticket_id}@${commit_hash}"
     echo "[Q] Postcondition Met: Invariant verified."
-    echo "--- EVIDENCE ID: $EVIDENCE_ID ---"
+    echo "--- EVIDENCE ID: $evidence_id ---"
     exit 0
 else
-    echo "[Q] Postcondition FAILED: Manifest file not tracked in commit."
+    echo "[Q] Postcondition FAILED: Manifest files not completely tracked in commit."
     exit 1
 fi
