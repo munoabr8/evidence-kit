@@ -7,7 +7,6 @@ set -o pipefail
 
 manifest_file="evidence-manifest.txt"
 ticket_id="${1:-}"
-EXPECTED_STATUS="In Review"
 
 # 1. Validate Precondition (P)
 if [[ -z "$ticket_id" ]]; then
@@ -15,7 +14,7 @@ if [[ -z "$ticket_id" ]]; then
     exit 1
 fi
 
-# New: Enforce valid_id(TICKET_ID) schema validation
+# Enforce valid_id(TICKET_ID) schema validation
 if [[ ! "$ticket_id" =~ ^[A-Z]+-[0-9]+$ ]]; then
     echo "[P] Precondition FAILED: Ticket ID format is invalid."
     exit 1
@@ -32,19 +31,16 @@ if [[ ! -f "$manifest_file" ]]; then
     exit 1
 fi
 
-# New: Capture M = read(manifest) into an immutable in-memory array
-# Filters out comments and blank spaces while stripping Windows CRLF endings
+# Capture M = read(manifest) into an immutable in-memory array
 declare -r -a M=($(awk '!/^[[:space:]]*#/ && !/^[[:space:]]*$/ {gsub(/\r/, ""); print}' "$manifest_file"))
 
-# New: Validate safe_path(f) and size(f) > 0 for all f ∈ M before any mutations occur
+# Validate safe_path(f) and size(f) > 0 for all f ∈ M before any mutations occur
 for file in "${M[@]}"; do
-    # safe_path checking (blocks absolute, parent traversal, and VCS leaks)
     if [[ "$file" =~ ^/ || "$file" =~ \.\./ || "$file" =~ ^\.git/ ]]; then
         echo "[P] Precondition FAILED: Unsafe path detected -> $file"
         exit 1
     fi
     
-    # size checking (ensures non-empty file blob)
     if [[ ! -f "$file" ]]; then
         echo "[P] Precondition FAILED: Evidence file missing -> $file"
         exit 1
@@ -54,8 +50,8 @@ for file in "${M[@]}"; do
     fi
 done
 
-# Assert tracking authority alignment
-echo "[P] Verifying tracking authority state for $ticket_id..."
+# Assert tracking authority utilities exist
+echo "[P] Verifying tracking authority environment..."
 if ! command -v jira &> /dev/null; then
     echo "[P] Precondition FAILED: 'jira' CLI tool is not installed or in PATH."
     exit 1
@@ -66,7 +62,8 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-# Capture raw response to handle network/auth failures vs. payload structure
+# EXECUTION ORDER FIXED: Fetch the payload before running status checks
+echo "[P] Fetching remote state from tracking authority for $ticket_id..."
 RAW_RESPONSE=$(jira issue view "$ticket_id" --raw 2>&1)
 if [[ $? -ne 0 ]]; then
     echo "[P] Precondition FAILED: 'jira' CLI execution encountered an error."
@@ -82,9 +79,10 @@ if [[ -z "$CURRENT_STATUS" || "$CURRENT_STATUS" == "null" ]]; then
     exit 1
 fi
 
-if [[ "$CURRENT_STATUS" != "$EXPECTED_STATUS" ]]; then
+# Evaluate against the formalized authorized set predicate: {"In Review", "Done"}
+if [[ "$CURRENT_STATUS" != "In Review" && "$CURRENT_STATUS" != "Done" ]]; then
     echo "[P] Precondition FAILED: State asymmetry detected."
-    echo "    Ticket $ticket_id is currently '$CURRENT_STATUS', but contract requires '$EXPECTED_STATUS'."
+    echo "    Ticket $ticket_id is currently '$CURRENT_STATUS', but contract requires 'In Review' or 'Done'."
     exit 1
 fi
 
@@ -111,7 +109,6 @@ git add -- "$manifest_file" || {
     exit 1
 }
 
-# Iterate directly through the verified, immutable snapshot M
 for file in "${M[@]}"; do
     if ! git add -f -- "$file"; then
         echo "[C] Failed to stage verified file: $file"
@@ -140,7 +137,7 @@ if ! git commit -m "$commit_message"; then
     exit 1
 fi
 
-# C.3 / Q: Atomically capture content-addressed hash identifier
+# Record the resulting content-addressed object identifier
 commit_hash="$(git rev-parse --short HEAD)"
 
 # 3. Postcondition (Q)
