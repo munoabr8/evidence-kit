@@ -79,6 +79,34 @@ Each item is self-contained — you do **not** need to understand the whole syst
 
 ---
 
+## Risk ops (optional)
+
+- [ ] Declare a risky operation:
+  ```bash
+  python3 bin/risk_ops.py declare deploy-test high \
+      "Modifies shared artifact state" --rollback "rm -rf artifacts/deploy-test*" \
+      --art-dir artifacts
+  ```
+- [ ] Capture a pre-operation snapshot:
+  ```bash
+  python3 bin/risk_ops.py snapshot deploy-test pre status=pending version=0 --art-dir artifacts
+  ```
+- [ ] Log an audit event:
+  ```bash
+  python3 bin/risk_ops.py log deploy-test started --severity info --art-dir artifacts
+  ```
+- [ ] Capture a post-operation snapshot and view the diff:
+  ```bash
+  python3 bin/risk_ops.py snapshot deploy-test post status=done version=1 --art-dir artifacts
+  python3 bin/risk_ops.py diff deploy-test --art-dir artifacts
+  ```
+- [ ] Show all risk artifacts:
+  ```bash
+  python3 bin/risk_ops.py show --art-dir artifacts
+  ```
+
+---
+
 ## Checklist self-check
 
 Self-check rules from the Layered Goal Graph:
