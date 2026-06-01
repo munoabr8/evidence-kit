@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# This script is run in:
-
-#bin/check_all_metadata_txt.sh
-# at line 25:    done < <(bin/check_metadata.sh --mode "$MODE" "$f" || true)
+ 
+# Called by:
+#   bin/check_all_metadata.sh
+#
+# Expected caller form:
+#   check_metadata.sh --mode "$MODE" --metadata "$f"
+#
+# Output contract:
+#   Emits one JSON object per line.
+#   METADATA_OK means no violations were found.
+#   Any other type is treated as a violation by the aggregate checker.
 
 SCRIPT_NAME="$(basename "$0")"
 
@@ -24,8 +31,12 @@ Examples:
   $SCRIPT_NAME --metadata artifacts/run.meta
   $SCRIPT_NAME --mode execution --metadata artifacts/run.meta
   $SCRIPT_NAME --mode legacy --metadata artifacts/run.meta
+
+Caller contract example:
+  check_metadata.sh --mode "\$MODE" --metadata "\$f"
 EOF
 }
+
 
 die_json() {
   local type="$1"

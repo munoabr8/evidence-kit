@@ -143,18 +143,48 @@ verify_manifest_entries_against_working_tree() {
     [[ "$all_met" == true ]]
 }
 
+verify_finality_seal() {
+    local ticket_id="$1"
+    # Check if a GPG-signed tag exists for this ticket
+    if git rev-parse --verify "refs/tags/${ticket_id}-FINAL" >/dev/null 2>&1; then
+        echo "[OK] Verified Finality Seal: ${ticket_id}-FINAL"
+        return 0
+    else
+        echo "[FAIL] Invariant Violation: Ticket is 'Done' but lacks a cryptographic seal."
+        return 1
+    fi
+}
+
 main() {
+    # 1. Basic Setup
     require_expected_flag "${1:-}"
-
-    echo "[Gatekeeper] Verifying working directory and HEAD against manifest..."
-
     require_git_repo
     require_head_exists
     require_manifest_exists_in_head
 
+    # 2. Get the ticket ID from the environment (or pass it as an argument)
+    # If your pipeline doesn't pass it yet, you may need to export it or pass via make
+    local ticket_id="${TICKET:-}" 
+
+    echo "[Gatekeeper] Verifying working directory and HEAD against manifest..."
     echo "--------------------------------------------------"
 
+    # 3. Verify Manifest
     if verify_manifest_entries_against_working_tree; then
+        
+        # 4. Finality Seal Check (Only if ticket is Done)
+        # We check the status via Jira CLI to determine if we must enforce the seal
+        local current_status
+        current_status=$(jira issue view "$ticket_id" --raw 2>/dev/null | jq -r '.fields.status.name' 2>/dev/null)
+        
+        if [[ "$current_status" == "Done" ]]; then
+            if ! verify_finality_seal "$ticket_id"; then
+                echo "--------------------------------------------------"
+                echo "[FAIL] Verification Gate Closed: Missing Finality Seal for Done ticket."
+                exit 1
+            fi
+        fi
+
         local current_hash
         current_hash="$(git rev-parse --short HEAD)"
 

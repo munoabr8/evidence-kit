@@ -19,8 +19,9 @@ review: verify
 
 # Step 3: Freeze, Mint Anchor, and Close Lifecycle Gap
 complete:
-	@echo "Executing Anchor Contract against In-Review ticket..."
-	@chmod +x scripts/anchor.sh
+	@echo "Executing Anchor Contract..."
 	./scripts/anchor.sh $(TICKET)
-	@echo "Anchor successfully generated. Transitioning tracking ref to Done."
+	@echo "Minting Cryptographic Seal..."
+	git tag -s "$(TICKET)-FINAL" -m "Final evidence seal for $(TICKET)"
+	@echo "Transitioning tracking ref to Done."
 	jira issue move $(TICKET) "Done"

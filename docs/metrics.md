@@ -66,9 +66,29 @@ Criteria:
 
 
 
-## Applied Example
 
-- case:
-- metric_applied:
-- observation:
-- lesson:
+Acceptance criteria:
+
+- User can define an assumption.
+- User can attach one or more evidence artifacts to that assumption.
+- User can record confidence_before and confidence_after.
+- System calculates confidence_delta.
+- System records whether the assumption was confirmed, disconfirmed, or unresolved.
+- System records time from assumption creation to confirmation/disconfirmation.
+- Output is saved as structured JSON.
+
+Smallest first implementation:
+
+{
+  "assumption_id": "A-001",
+  "claim": "Input provenance reduces debugging uncertainty",
+  "created_at": "2026-05-22T00:00:00Z",
+  "status": "unresolved",
+  "confidence_before": 0.55,
+  "confidence_after": null,
+  "evidence": [],
+  "collection_gap": "Need one failing workflow and one repaired workflow with provenance attached",
+  "actionability": null
+}
+
+Do not implement all metrics first. Start with:
