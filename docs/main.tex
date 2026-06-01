@@ -1,0 +1,209 @@
+\documentclass{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{amsmath}
+\begin{document}
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Images/jira_issue_workflow.jpg}
+    \caption{Jira Workflow States and Optional workflows}
+    \label{fig:jira_workflow}
+\end{figure}
+
+
+\section*{Introduction}
+While this workflow shows optional complimentary workflows, the main topic of concern is documentation of the Jira issue workflow. The way in which this document is presented is the same as is presented in the image.
+
+
+\section{Goal}
+Create  
+\begin{verbatim}
+docs/jira_issue_workflow.md
+\end{verbatim}
+as the reusable reference for managing Evidence Kit Jira issues from the CLI.
+
+\section{Why}
+The Jira issue workflow is not yet proceduralized. I need a repeatable command sequence that makes issue creation, state transitions, debug-case linking, commits, and completion comments easy to execute with low friction.
+
+\section{Preconditions}
+
+
+\begin{verbatim}
+-JIRA_API_TOKEN has already been exported.
+- Jira CLI has already been initialized with jira init.
+- The default Jira project is configured as KAN.
+- The Evidence Kit repo is available locally.
+- Jira site:https://evidencekit.atlassian.net/
+\end{verbatim} 
+
+ 
+
+
+
+
+
+
+\section{Optional: Evidence Capture}
+Using asciinema for terminal recording, I can capture commands and output that was observed in the command line interface.
+
+The generic command to capture and save a cast file to a certain directory is:
+
+\begin{verbatim}
+asciinema rec <location_to_save_cast>
+\end{verbatim}
+
+while a specific example is:\\
+
+\begin{verbatim}
+asciinema rec artifacts/cast/jira_workflow_smoke.cast
+
+\end{verbatim}
+
+
+A test run could look like: 
+\begin{verbatim}
+    asciinema rec artifacts/cast/jira_workflow_smoke.cast
+    pwd
+    jira me
+    jira issue list
+    git status
+    exit
+\end{verbatim}
+The command exist will end the recording.
+
+
+Optional quick playback:
+
+\begin{verbatim}
+    asciinema play artifacts/cast/jira_workflow_smoke.cast
+\end{verbatim}
+ 
+
+\section{Jira Workflow}
+
+\subsubsection*{Optional: Verify Jira CLI access}
+
+
+\begin{verbatim}
+    jira me
+    jira issue list
+\end{verbatim}
+ 
+
+
+\subsection{Create issue}
+\begin{verbatim}
+    jira issue create
+\end{verbatim}
+
+
+\noindent \textit{Naming during issue generation}\\
+The \textbf{Summary} is a command. (It tells you what action to take).\\
+The \textbf{Situation} is history. (It tells you what the system looks like before you act).
+
+
+\subsubsection*{Optional: View issue list}
+\begin{verbatim}
+    jira issue list
+    jira issue view KAN-X
+\end{verbatim}
+ 
+\subsection{Transition issue: In-progress}
+\begin{verbatim}
+    jira issue move KAN-X "In Progress"
+\end{verbatim}
+
+\subsubsection*{Optional: Issue commenting}
+
+\begin{verbatim}
+    jira issue comment add KAN-X "Created debug case: cases/debug_case_<caseNumber>.md"
+\end{verbatim}
+
+\subsection{Do work}
+
+\subsection{Transition issue: In-Review}
+
+\begin{verbatim}
+   jira issue move KAN-X "In Review"
+\end{verbatim}
+
+
+
+
+\subsection{Add completion comment: Not optional}
+
+\begin{verbatim}
+   jira issue comment add KAN-X "Completed. Commit: $(git rev-parse --short HEAD)"
+
+\end{verbatim}
+
+
+\subsubsection*{Optional: Commit implementation}  
+ 
+
+\begin{verbatim}
+   git add <files>
+   git commit -m "<atomic commit message>"
+
+
+\end{verbatim}
+
+
+\subsection{Transition issue: Done}
+
+\begin{verbatim}
+   jira issue move KAN-X "Done"
+
+\end{verbatim}
+
+ 
+
+\section{Conclusion}
+
+If you are recording the issue generating then you would need to simply
+type exit to return control to the actual CLI.\\
+\marginpar{AI rewording.}
+\textbf{
+  When you run asciinema rec, you are essentially starting a new shell session wrapped by the recorder.
+}
+
+ 
+
+\subsection{Formal Verification of Evidence Anchoring}
+We define the evidence anchoring process as a Hoare Triple $\{P\} \text{anchor.sh} \{Q\}$:
+\begin{itemize}
+    \item \textbf{Precondition ($P$):} The working directory is a Git repository, \texttt{evidence-manifest.txt} exists, and a valid \texttt{TICKET\_ID} is provided.
+    \item \textbf{Command ($C$):} The \texttt{anchor.sh} script execution, which performs:
+    \begin{enumerate}
+        \item Recursive staging of manifest files: $\forall f \in \text{manifest} : \text{git add } f$.
+        \item Atomic commit: $\text{git commit} \rightarrow \text{hash}$.
+    \end{enumerate}
+    \item \textbf{Postcondition ($Q$):} A new Git commit exists such that the invariant $\forall f \in \text{manifest} : f \in \text{git\_tree}(\text{hash})$ holds, and the string $\texttt{TICKET\_ID@hash}$ is generated.
+\end{itemize}
+
+
+\section{Acceptance criteria}
+
+
+\begin{verbatim}
+- docs/jira_issue_workflow.md exists.
+- It includes Jira CLI preconditions.
+- It includes the issue lifecycle commands.
+- It uses KAN-X as a placeholder, not KAN-1.
+- It explains that JIRA_API_TOKEN must be exported but does not include the real token.
+- It includes the commit-hash comment step.
+- It can be followed manually in under 10 minutes.
+
+
+\end{verbatim}
+
+
+
+  
+
+
+
+
+
+
+\end{document}
