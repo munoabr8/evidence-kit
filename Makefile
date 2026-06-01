@@ -24,4 +24,4 @@ complete:
 	@echo "Minting Cryptographic Seal..."
 	git tag -s "$(TICKET)-FINAL" -m "Final evidence seal for $(TICKET)"
 	@echo "Transitioning tracking ref to Done."
-	jira issue move $(TICKET) "Done"
+	jira issue move $(TICKET) "Done"git tag -s "KAN-19-FINAL" -m "Final evidence seal for KAN-19"
