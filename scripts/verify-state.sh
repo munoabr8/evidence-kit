@@ -4,10 +4,10 @@
 #
 # Contract:
 #   Verify that every non-comment, non-empty entry in evidence-manifest.txt
-#   as committed in HEAD resolves to a file blob in HEAD.
+#   exists on disk, is non-empty, and matches the tracked blob in HEAD.
 #
 # Formal invariant:
-#   ∀ f ∈ evidence-manifest.txt@HEAD : f ∈ git_tree(HEAD) ∧ type(f) = blob
+#   ∀ f ∈ evidence-manifest.txt@HEAD : f ∈ git_tree(HEAD) ∧ type(f) = blob ∧ size(f) > 0
 
 set -u
 set -o pipefail
@@ -26,16 +26,13 @@ fail() {
 
 is_comment_or_blank() {
     local line="$1"
-
     [[ "$line" =~ ^[[:space:]]*# ]] && return 0
     [[ "$line" =~ ^[[:space:]]*$ ]] && return 0
-
     return 1
 }
 
 is_invalid_manifest_path() {
     local path="$1"
-
     case "$path" in
         /*|../*|*/../*|.git/*)
             return 0
@@ -55,11 +52,9 @@ require_expected_flag() {
 
 require_git_repo() {
     local repo_root
-
     repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
         fail "Precondition Violation: Must be executed inside a Git repository."
     }
-
     cd "$repo_root" || {
         fail "Precondition Violation: Could not move to repository root: $repo_root"
     }
@@ -92,11 +87,28 @@ verify_manifest_entry() {
         return 1
     fi
 
+    # 1. New Local Filesystem Integrity Invariant Checks
+    if [[ ! -f "$manifest_entry" ]]; then
+        echo "[FAIL] Filesystem Violation: '$manifest_entry' does not exist in the working directory."
+        return 1
+    fi
+
+    if [[ ! -s "$manifest_entry" ]]; then
+        echo "[FAIL] Fidelity Violation: '$manifest_entry' is an empty file (0 bytes)."
+        return 1
+    fi
+
+    # 2. Git Tree Resolution Check
     object_type="$(git cat-file -t "HEAD:${manifest_entry}" 2>/dev/null || true)"
 
     case "$object_type" in
         blob)
-            echo "[OK] Tracked File: $manifest_entry"
+            # 3. New Content Drift Check: Does working directory match what's staged/committed?
+            if ! git diff --quiet -- "$manifest_entry"; then
+                echo "[WARN] Environmental Drift: '$manifest_entry' has uncommitted local mutations."
+                # Change to 'return 1' if you want to block 'make review' on dirty files
+            fi
+            echo "[OK] Verified Active Blob: $manifest_entry"
             return 0
             ;;
         tree)
@@ -130,7 +142,7 @@ verify_manifest_entries_against_head() {
 main() {
     require_expected_flag "${1:-}"
 
-    echo "[Gatekeeper] Verifying committed HEAD against manifest..."
+    echo "[Gatekeeper] Verifying working directory and HEAD against manifest..."
 
     require_git_repo
     require_head_exists

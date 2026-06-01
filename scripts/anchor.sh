@@ -7,6 +7,7 @@ set -o pipefail
 
 manifest_file="evidence-manifest.txt"
 ticket_id="${1:-}"
+EXPECTED_STATUS="In Review"
 
 # 1. Validate Precondition (P)
 if [[ -z "$ticket_id" ]]; then
@@ -22,6 +23,25 @@ cd "$repo_root" || exit 1
 
 if [[ ! -f "$manifest_file" ]]; then
     echo "[P] Precondition FAILED: $manifest_file not found at repo root."
+    exit 1
+fi
+
+# New: State Synchronization Check (Assert tracking authority alignment)
+echo "[P] Verifying tracking authority state for $ticket_id..."
+if ! command -v jira &> /dev/null; then
+    echo "[P] Precondition FAILED: 'jira' CLI tool is not installed or in PATH."
+    exit 1
+fi
+
+CURRENT_STATUS=$(jira issue view "$ticket_id" --json 2>/dev/null | jq -r '.fields.status.name' 2>/dev/null)
+if [[ -z "$CURRENT_STATUS" || "$CURRENT_STATUS" == "null" ]]; then
+    echo "[P] Precondition FAILED: Unable to fetch status for ticket $ticket_id. Verify connection/auth."
+    exit 1
+fi
+
+if [[ "$CURRENT_STATUS" != "$EXPECTED_STATUS" ]]; then
+    echo "[P] Precondition FAILED: State asymmetry detected."
+    echo "    Ticket $ticket_id is currently '$CURRENT_STATUS', but contract requires '$EXPECTED_STATUS'."
     exit 1
 fi
 
@@ -43,7 +63,7 @@ verify_manifest_against_head() {
     [[ "$all_met" == true ]] && return 0 || return 1
 }
 
-echo "[P] Precondition Met: Contract initiated for $ticket_id."
+echo "[P] Precondition Met: Contract initiated and synchronized for $ticket_id."
 
 # 2. Command (C)
 echo "[C] Staging manifest and evidence files..."
