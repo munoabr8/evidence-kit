@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 #./bin/probes/env_probe
+
+# env_probe is an execution-context probe
+# and detects execution context rather than host capability.
+# Script is executed within act 
+
 # ---- helpers ---------------------------------------------------------------
 _die() { echo "env_probe: $*" >&2; exit "${2:-3}"; }
 

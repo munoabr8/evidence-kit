@@ -106,7 +106,17 @@ verify_manifest_entry() {
             if ! git diff --quiet -- "$manifest_entry"; then
                 echo "[WARN] Environmental Drift: '$manifest_entry' has uncommitted local mutations."
             fi
-            echo "[OK] Verified Active Blob: $manifest_entry"
+
+            # 3. Temporal Artifact Attribution Invariant Check (\CreatedAt{L}{t})
+            local actual_creation_time
+            actual_creation_time=$(git log --diff-filter=A --format=%cI -n 1 -- "$manifest_entry" 2>/dev/null)
+            
+            if [[ -z "$actual_creation_time" ]]; then
+                echo "[FAIL] Temporal Violation: '$manifest_entry' has no verifiable Git lineage."
+                return 1
+            fi
+
+            echo "[OK] Verified Active Blob & Timeline: $manifest_entry ($actual_creation_time)"
             return 0
             ;;
         tree)
@@ -131,16 +141,27 @@ verify_manifest_entry() {
 
 verify_manifest_entries_against_working_tree() {
     local manifest_entry
-    local all_met=true
 
-    # Read from the current active file system manifest to check the desired state
+    # Formal mapping:
+    #   M := active entries in evidence-manifest.txt,
+    #        excluding blank lines and comment lines.
+    #
+    # Operational witness:
+    #   The universal quantifier ∀ f ∈ M is implemented by iterating
+    #   over each manifest line and delegating each active entry to
+    #   verify_manifest_entry(f).
+    #
+    # Per-entry invariant enforcement:
+    #   verify_manifest_entry(f) enforces safe_path(f), exists(f),
+    #   size(f) > 0, and HEAD/local-artifact resolution.
     while IFS= read -r manifest_entry || [[ -n "$manifest_entry" ]]; do
         if ! verify_manifest_entry "$manifest_entry"; then
-            all_met=false
+            echo "[FATAL] Universal Quantifier Broken at entry: $manifest_entry"
+            return 1  # Instant abort preserves state integrity
         fi
     done < "$MANIFEST_FILE"
 
-    [[ "$all_met" == true ]]
+    return 0
 }
 
 verify_finality_seal() {
@@ -155,12 +176,20 @@ verify_finality_seal() {
     fi
 }
 
+require_ticket_id() {
+    if [[ -z "${TICKET:-}" ]]; then
+        fail "Precondition Violation: TICKET environment variable is required."
+    fi
+}
+
+
 main() {
     # 1. Basic Setup
     require_expected_flag "${1:-}"
     require_git_repo
     require_head_exists
     require_manifest_exists_in_head
+    require_ticket_id
 
     # 2. Get the ticket ID from the environment (or pass it as an argument)
     # If your pipeline doesn't pass it yet, you may need to export it or pass via make
@@ -196,6 +225,8 @@ main() {
         echo "[FAIL] Verification Gate Closed: Resolve discrepancies before progressing."
         exit 1
     fi
+
+    
 }
 
 main "$@"

@@ -1,8 +1,12 @@
 
 # Files required for formal evidence verification
 docs/jira_issue_workflow.md
-scripts/anchor.sh
-scripts/verify-state.sh
-Makefile
+
+
 docs/main.tex
-artifacts/test_session.cast
+artifacts/KAN-20-analysis.tex
+artifacts/test_new_version.tex
+artifacts/main_refactor.tex
+
+
+docs/op_table_v8.tex

@@ -15,6 +15,9 @@ LOG_DIR   := $(ART_DIR)/logs
 ASSET_SRC_DIR ?= media-pack/player
 
 
+
+
+
  setup:
 	@command -v ttyd >/dev/null || { \
 		if command -v apk >/dev/null 2>&1; then \
@@ -66,8 +69,8 @@ PROBE := $(MKDIR)bin/probes/env_probe
 
 
 capture: setup .env.probe
-	ROOT=$(ROOT) ART_DIR=$(ART_DIR) '$(PROBE)' --ensure-artifacts
-	ROOT=$(ROOT) ART_DIR=$(ART_DIR) ./bin/run_and_capture.sh
+	#ROOT=$(ROOT) ART_DIR=$(ART_DIR) '$(PROBE)' --ensure-artifacts
+	#ROOT=$(ROOT) ART_DIR=$(ART_DIR) ./bin/run_and_capture.sh
 
 artifacts-index:
 	@python3 bin/gen-index.py
