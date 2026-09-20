@@ -55,9 +55,17 @@ decide_root() {
 
 # ---- postconditions (call after decide_root) -------------------------------
 guard_root() {
-  case "$ROOT" in /*) : ;; *) _die "ROOT is not absolute after decision: $ROOT";; esac
-  [ -n "$ROOT" ] && [ -d "$ROOT" ] || _die "ROOT missing or not a dir: $ROOT" # issue with shellcheck
-  case "$ART_DIR" in /*) : ;; *) _die "ART_DIR must be absolute: $ART_DIR";; esac
+  case "$ROOT" in
+    /*) : ;;
+    *) _die "ROOT is not absolute after decision: $ROOT" ;;
+  esac
+
+  [ -d "$ROOT" ] || _die "ROOT missing or not a dir: $ROOT"
+
+  case "$ART_DIR" in
+    /*) : ;;
+    *) _die "ART_DIR must be absolute: $ART_DIR" ;;
+  esac
 }
 
 #VERSION="1.0.0"
@@ -76,22 +84,24 @@ bool() { [ "${1:-}" = "true" ] && echo true || echo false; }
 
 # Unit of Investigation2: variables not being used outside of this function.
 
-_detect_git_flags() {
-  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    in_git=true
-    git_root="$(git rev-parse --show-toplevel)"
-    superproject_root="$(git rev-parse --show-superproject-working-tree 2>/dev/null || true)"
-    is_submodule=false
-    [ -n "$superproject_root" ] && is_submodule=true
+_detect_git_context() {
+  local superproject_root
+
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    printf '%s\n' "not-git"
+    return
+  fi
+
+  superproject_root="$(
+    git rev-parse --show-superproject-working-tree 2>/dev/null || true
+  )"
+
+  if [ -n "$superproject_root" ]; then
+    printf '%s\n' "submodule"
   else
-    in_git=false
-    is_submodule=false
-    git_root="" # issue with shellcheck
-    superproject_root=""
+    printf '%s\n' "git-repo"
   fi
 }
-
-
 # ---------- detect ----------
 is_codespaces=false
 if [ "${CODESPACES:-}" = "true" ] || [ -n "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN:-}" ]; then
@@ -100,33 +110,69 @@ fi
 
 in_docker=false
 { [ -f /.dockerenv ] || grep -qE '/docker/|/containerd/' /proc/1/cgroup 2>/dev/null; } && in_docker=true
+
 in_github_actions=false
 [ "${GITHUB_ACTIONS:-}" = "true" ] && in_github_actions=true
 
+
 print_human() {
-  _detect_git_flags
+  local git_context
+
+  git_context="$(_detect_git_context)"
   decide_root
   guard_root
+
   echo "environment:"
   echo "  codespaces:        $(bool "${is_codespaces:-false}")"
   echo "  docker:            $(bool "${in_docker:-false}")"
   echo "  github_actions:    $(bool "${in_github_actions:-false}")"
-
+  echo "  git_context:       $git_context"
 }
 
 
- 
-
-
 case "${1:-}" in
-  --print-root)        decide_root; echo "$ROOT" ;;
-  --print-art-dir)     decide_root; echo "${ART_DIR:-$ROOT/artifacts}" ;;
-  --ensure-artifacts)  decide_root; mkdir -p "${ART_DIR:-$ROOT/artifacts}" ;;
-  --print-env)         decide_root; printf 'ROOT=%s\nART_DIR=%s\n' "$ROOT" "${ART_DIR:-$ROOT/artifacts}" ;;
-  --json)              decide_root; print_json_with_decisions ;;
-  --is-submodule)      [ "$is_submodule" = true ] ;;
-  --require-git)       [ "$in_git" = true ] || exit 4 ;;
-  --help|-h)           print_help ;;
-  --version)           echo "env_probe 1.0.0" ;;
-  *)                   print_human  ;;
+  --print-root)
+    decide_root
+    echo "$ROOT"
+    ;;
+
+  --print-art-dir)
+    decide_root
+    echo "${ART_DIR:-$ROOT/artifacts}"
+    ;;
+
+  --ensure-artifacts)
+    decide_root
+    mkdir -p "${ART_DIR:-$ROOT/artifacts}"
+    ;;
+
+  --print-env)
+    decide_root
+    printf 'ROOT=%s\nART_DIR=%s\n' "$ROOT" "${ART_DIR:-$ROOT/artifacts}"
+    ;;
+
+  --json)
+    decide_root
+    print_json_with_decisions
+    ;;
+
+  --is-submodule)
+    [ "$(_detect_git_context)" = "submodule" ]
+    ;;
+
+  --require-git)
+    [ "$(_detect_git_context)" != "not-git" ] || exit 4
+    ;;
+
+  --help|-h)
+    print_help
+    ;;
+
+  --version)
+    echo "env_probe 1.0.0"
+    ;;
+
+  *)
+    print_human
+    ;;
 esac
