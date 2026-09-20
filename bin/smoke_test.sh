@@ -17,13 +17,16 @@ dump_diagnostics() {
 }
 
 cleanup() {
-  if [ -n "${SERVER_PID:-}" ]; then
-    kill "${SERVER_PID}" 2>/dev/null || true
-    wait "${SERVER_PID}" 2>/dev/null || true
+  if [ -n "${SERVER_PID:-}" ]; then # issue with shellcheck
+    kill "${SERVER_PID}" 2>/dev/null || true # issue with shellcheck
+    wait "${SERVER_PID}" 2>/dev/null || true # issue with shellcheck
   fi
 }
 
-trap 'rc=$?; echo "smoke_test.sh failed rc=$rc"; dump_diagnostics || true; cleanup; exit $rc' ERR
+trap 'rc=$?;  # issue with shellcheck
+echo "smoke_test.sh failed rc=$rc"; 
+dump_diagnostics || true; 
+cleanup; exit $rc' ERR
 trap 'cleanup' EXIT
 
 TARGET="${TARGET:-smoke}"
@@ -44,12 +47,12 @@ mkdir -p "${CAST_DIR}" "${VIEWS_DIR}/cast" "${ASSETS_DIR}"
 rm -f "${ASCIICAST}.sha256"
 
 if command -v asciinema >/dev/null; then
-  asciinema rec --overwrite -q \
-    -c "printf 'smoke\n'; sleep 0.1; printf 'done\n'" \
-    "${ASCIICAST}" || {
-      echo "asciinema rec failed"
-      exit 1
-    }
+asciinema rec --overwrite -q \
+  -c "printf 'smoke\n'; date -u '+%Y-%m-%d %H:%M:%S UTC'; sleep 1; printf 'done\n'" \
+  "${ASCIICAST}" || {
+    echo "asciinema rec failed"
+    exit 1
+  }
 else
   now=$(date +%s)
   printf '{"version":2,"width":80,"height":24,"timestamp":%s}\n' "${now}" > "${ASCIICAST}"

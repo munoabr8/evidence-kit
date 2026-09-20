@@ -56,7 +56,7 @@ decide_root() {
 # ---- postconditions (call after decide_root) -------------------------------
 guard_root() {
   case "$ROOT" in /*) : ;; *) _die "ROOT is not absolute after decision: $ROOT";; esac
-  [ -n "$ROOT" ] && [ -d "$ROOT" ] || _die "ROOT missing or not a dir: $ROOT"
+  [ -n "$ROOT" ] && [ -d "$ROOT" ] || _die "ROOT missing or not a dir: $ROOT" # issue with shellcheck
   case "$ART_DIR" in /*) : ;; *) _die "ART_DIR must be absolute: $ART_DIR";; esac
 }
 
@@ -64,6 +64,18 @@ guard_root() {
 
 #_json_escape() { sed 's/\\/\\\\/g; s/"/\\"/g' <<< "${1:-}"; }
 bool() { [ "${1:-}" = "true" ] && echo true || echo false; }
+
+
+# This appears to be a private function only for internal use.
+# Unit of investigation:  execution of evidence kit is occuring in:
+# 1.) git repo
+# 2.) embedded inside another repo.
+# 3.) in submodule
+# and some manner of documenting which scenerio appears to part of the purpose of this function.
+
+
+# Unit of Investigation2: variables not being used outside of this function.
+
 _detect_git_flags() {
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     in_git=true
@@ -74,7 +86,7 @@ _detect_git_flags() {
   else
     in_git=false
     is_submodule=false
-    git_root=""
+    git_root="" # issue with shellcheck
     superproject_root=""
   fi
 }

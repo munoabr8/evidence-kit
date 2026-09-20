@@ -1,0 +1,58 @@
+# \begin{evidencecontract}
+# version: 1.1
+# evidence_key: REP-009-smoke-recording
+# artifact_hash: sha256:173e34f3f2cbb5953b8d782414e7a5dd00bfa1bce6b84c1040b98c2a93e445b9
+# hash_scope: artifacts/cast/smoke.cast
+# command: act workflow_dispatch -j demo -W .github/workflows/demo.yml --bind
+# \end{evidencecontract}
+
+name: Demo
+
+on:
+  workflow_dispatch:
+
+jobs:
+  demo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: false
+
+      - name: Delete old artifacts
+        run: make -f hunchly.mk clean-artifacts
+
+      - name: Prepare playback assets
+        run: make -f hunchly.mk vendor-player
+
+      - name: Generate recording, index, and verify playback
+        run: make -f hunchly.mk all
+
+      - name: Confirm playback files exist
+        run: |
+          test -s artifacts/index.html
+          test -s artifacts/cast/smoke.cast
+          test -s artifacts/views/cast/smoke.cast.html
+
+
+      - name: Generate evidence contract
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          artifact="artifacts/cast/smoke.cast"
+          test -s "$artifact"
+
+          digest="$(sha256sum "$artifact" | awk '{print $1}')"
+          mkdir -p artifacts/metadata
+
+          cat > artifacts/metadata/smoke-evidence-contract.tex <<EOF
+          \begin{evidencecontract}
+          version: 1.1
+          evidence_key: REP-009-smoke-recording
+          artifact_hash: sha256:${digest}
+          hash_scope: ${artifact}
+          command: act workflow_dispatch -j demo -W .github/workflows/demo.yml --bind
+          \end{evidencecontract}
+          EOF
+

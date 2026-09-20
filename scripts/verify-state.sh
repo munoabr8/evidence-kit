@@ -201,11 +201,14 @@ main() {
     # 3. Verify Manifest
     if verify_manifest_entries_against_working_tree; then
         
-        # 4. Finality Seal Check (Only if ticket is Done)
-        # We check the status via Jira CLI to determine if we must enforce the seal
-        local current_status
-        current_status=$(jira issue view "$ticket_id" --raw 2>/dev/null | jq -r '.fields.status.name' 2>/dev/null)
-        
+            local current_status
+                if ! current_status=$(
+                    jira issue view "$ticket_id" --raw |
+                    jq -er '.fields.status.name |
+                select(type == "string" and length > 0)'
+                    ); then
+                    fail "Cannot establish Jira status for $ticket_id."
+                fi
         if [[ "$current_status" == "Done" ]]; then
             if ! verify_finality_seal "$ticket_id"; then
                 echo "--------------------------------------------------"

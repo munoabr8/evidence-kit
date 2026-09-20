@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+#./bin/host_capabilities.sh
+
 has_cmd() {
   command -v "$1" >/dev/null 2>&1
 }

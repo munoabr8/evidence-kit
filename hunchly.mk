@@ -69,8 +69,8 @@ PROBE := $(MKDIR)bin/probes/env_probe
 
 
 capture: setup .env.probe
-	#ROOT=$(ROOT) ART_DIR=$(ART_DIR) '$(PROBE)' --ensure-artifacts
-	#ROOT=$(ROOT) ART_DIR=$(ART_DIR) ./bin/run_and_capture.sh
+	ROOT=$(ROOT) ART_DIR=$(ART_DIR) '$(PROBE)' --ensure-artifacts
+	ROOT=$(ROOT) ART_DIR=$(ART_DIR) ./bin/run_and_capture.sh
 
 artifacts-index:
 	@python3 bin/gen-index.py
@@ -84,12 +84,16 @@ fresh-run:
 	@$(MAKE) -f hunchly.mk serve
 
 
+.PHONY: all demo serve
 
 all:
 	@$(MAKE) -f hunchly.mk capture
 	@$(MAKE) -f hunchly.mk artifacts-index
 	@$(MAKE) -f hunchly.mk smoke-playback
-	@$(MAKE) -f hunchly.mk serve	
+
+demo: all
+	@$(MAKE) -f hunchly.mk serve
+
  
 check-probe:
 	@$(PROBE) --version >/dev/null || { echo "bad env_probe_proto" >&2; exit 1; }
