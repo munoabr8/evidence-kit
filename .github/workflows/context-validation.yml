@@ -1,0 +1,38 @@
+name: Context validation
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  context-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        if: ${{ !env.ACT }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Probe workspace state
+        run: bash bin/probes/workspace_probe.sh
+
+      - name: Test context precedence
+        run: python3 bin/probe_context.py
+
+      - name: Test environment propagation
+        env:
+          ART_DIR: artifacts/ci
+          EMBED_LIMIT_BYTES: "2048"
+        run: python3 bin/probe_environment.py
+
+      - name: Test effective context behavior
+        env:
+          PYTHONPATH: bin
+          ART_DIR: artifacts/ci
+          EMBED_LIMIT_BYTES: "2048"
+        run: python3 bin/probes/probe_effective_context.py
+
+      - name: Verify expected artifact
+        run: test -f artifacts/ci/context-probe.txt
