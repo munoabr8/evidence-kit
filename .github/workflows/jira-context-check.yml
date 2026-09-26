@@ -1,8 +1,7 @@
 name: Jira context check
 
 on:
-  pull:
-
+  pull_request:
 jobs:
   jira-context:
     runs-on: ubuntu-latest
