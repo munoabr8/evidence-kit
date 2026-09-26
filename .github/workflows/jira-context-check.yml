@@ -3,8 +3,6 @@ name: Jira context check
 on:
   pull:
 
-
-# This yaml may not be needed.
 jobs:
   jira-context:
     runs-on: ubuntu-latest
@@ -12,6 +10,7 @@ jobs:
       JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
       JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
       JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+      JIRA_VENV: /tmp/jira-check-venv
 
     steps:
       - uses: actions/checkout@v4
@@ -21,16 +20,25 @@ jobs:
         with:
           python-version: '3.12'
 
+
       - name: Prepare Python environment
         run: |
-          python3 -m venv /tmp/jira-check-venv
-          /tmp/jira-check-venv/bin/python -m pip install \
-          --quiet --disable-pip-version-check requests
+          python3 -m venv "$JIRA_VENV"
+          "$JIRA_VENV/bin/python" -m pip install \
+            --quiet --disable-pip-version-check requests
+        
 
-  
+
 
       - name: Check Jira observation
-        run: /tmp/jira-check-venv/bin/python bin/probes/external/jira_context.py KAN-20
+        env:
+          PYTHONPATH: bin
+          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          /tmp/jira-check-venv/bin/python \
+            bin/probes/external/jira_context.py KAN-20
 
 
       - name: Check runtime and Jira observation
