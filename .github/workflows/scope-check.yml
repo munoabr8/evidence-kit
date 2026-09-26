@@ -36,7 +36,7 @@ jobs:
 
       - name: Probe host capabilities
         run: |
-            ./bin/internal/host_capabilities.sh
+            ./bin/probes/internal/host_capabilities.sh
 
       - name: Ensure asciinema is available
         run: |
