@@ -15,16 +15,25 @@ fi
 
 echo "  clean:              $clean"
 
-if [ -f bin/probe_context.py ]; then
-  echo "  probe_context:      present"
-else
-  echo "  probe_context:      missing"
-  exit 1
-fi
+check_file() {
+  local label="$1"
+  local path="$2"
 
-if [ -f bin/probe_environment.py ]; then
-  echo "  probe_environment:  present"
-else
-  echo "  probe_environment:  missing"
-  exit 1
-fi
+  if [ -f "$path" ]; then
+    echo "  $label: present"
+  else
+    echo "  $label: missing ($path)"
+    exit 1
+  fi
+}
+
+check_file "probe_context" \
+  "bin/probes/internal/probe_context.py"
+
+check_file "probe_environment" \
+  "bin/probes/internal/probe_environment.py"
+
+check_file "probe_effective" \
+  "bin/probes/internal/probe_effective_context.py"
+
+echo "workspace probe: PASS"

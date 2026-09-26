@@ -1,8 +1,10 @@
 name: Jira context check
 
 on:
-  workflow_dispatch:
+  pull:
 
+
+# This yaml may not be needed.
 jobs:
   jira-context:
     runs-on: ubuntu-latest
@@ -28,8 +30,8 @@ jobs:
   
 
       - name: Check Jira observation
-        run: /tmp/jira-check-venv/bin/python bin/jira_context.py KAN-20
+        run: /tmp/jira-check-venv/bin/python bin/probes/external/jira_context.py KAN-20
 
 
       - name: Check runtime and Jira observation
-        run: bash bin/check_jira_context.sh KAN-20
+        run: bash bin/probes/external/check_jira_context.sh KAN-20

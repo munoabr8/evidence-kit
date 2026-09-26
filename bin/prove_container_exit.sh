@@ -15,7 +15,7 @@ docker run --rm \
   bash -lc '
     echo "CONTAINER: started"
     python3 --version
-    ./bin/probes/env_probe
+    ./bin/probes/internal/env_probe
     echo "CONTAINER: setup complete"
   '
 rc=$?

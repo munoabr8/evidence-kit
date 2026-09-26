@@ -11,7 +11,7 @@ jobs:
       matrix:
         script:
           #- ./bin/smoke_test.sh
-          - ./bin/probes/env_probe
+          - ./bin/probes/internal/env_probe
           #- ./bin/host_capabilities.sh 
     steps:
       - uses: actions/checkout@v4

@@ -59,7 +59,7 @@ live-stop:
 	@[ -f artifacts/ttyd.pid ] && kill $$(cat artifacts/ttyd.pid) && rm -f artifacts/ttyd.pid || echo "not running"
 
 MKDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-PROBE := $(MKDIR)bin/probes/env_probe
+PROBE := $(MKDIR)bin/probes/internal/env_probe
 
 .env.probe:
 	@'$(PROBE)' --print-env > $@ || { rm -f $@; exit 1; }

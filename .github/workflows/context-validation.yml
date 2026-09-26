@@ -13,26 +13,70 @@ jobs:
         if: ${{ !env.ACT }}
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
-      - name: Probe workspace state
-        run: bash bin/probes/workspace_probe.sh
+      # ============================================================
+      # INTERNAL EXECUTION ENVIRONMENT
+      # Establish that the local/runtime context is valid.
+      # ============================================================
 
-      - name: Test context precedence
-        run: python3 bin/probe_context.py
+      - name: INTERNAL - Probe workspace state
+        run: bash bin/probes/internal/workspace_probe.sh
 
-      - name: Test environment propagation
+      - name: INTERNAL - Test context precedence
         env:
-          ART_DIR: artifacts/ci
-          EMBED_LIMIT_BYTES: "2048"
-        run: python3 bin/probe_environment.py
+          PYTHONPATH: bin
+        run: python3 bin/probes/internal/probe_context.py
 
-      - name: Test effective context behavior
+      - name: INTERNAL - Test environment propagation
         env:
           PYTHONPATH: bin
           ART_DIR: artifacts/ci
           EMBED_LIMIT_BYTES: "2048"
-        run: python3 bin/probes/probe_effective_context.py
+        run: python3 bin/probes/internal/probe_environment.py
 
-      - name: Verify expected artifact
+      - name: INTERNAL - Test effective context behavior
+        env:
+          PYTHONPATH: bin
+          ART_DIR: artifacts/ci
+          EMBED_LIMIT_BYTES: "2048"
+        run: python3 bin/probes/internal/probe_effective_context.py
+
+      - name: INTERNAL - Verify expected artifact
         run: test -f artifacts/ci/context-probe.txt
+
+      - name: INTERNAL - Setup Jira runtime
+        run: |
+          python3 -m venv .jira-check-venv
+          .jira-check-venv/bin/python -m pip install --upgrade pip
+          .jira-check-venv/bin/python -m pip install requests
+
+      # ============================================================
+      # INTERNAL / EXTERNAL BOUNDARY
+      #
+      # Everything above establishes properties of our own execution
+      # context. Everything below observes or validates state belonging
+      # to an external system.
+      # ============================================================
+
+ 
+      - name: EXTERNAL - Observe Jira context
+        env:
+          PYTHONPATH: bin
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: .jira-check-venv/bin/python bin/probes/external/jira_context.py KAN-20
+
+      - name: EXTERNAL - Validate Jira observation
+        env:
+          PYTHONPATH: bin
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: bash bin/probes/external/check_jira_context.sh KAN-20
+       
+
+
+
+ 

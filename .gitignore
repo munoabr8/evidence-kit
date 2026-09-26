@@ -19,6 +19,9 @@ tests/**
 
 # Editor/dev container
 
+.secrets
+.env.act
+
 .env
 *.log
 *.pid

@@ -32,11 +32,11 @@ jobs:
 
       - name: Probe execution environment
         run: |
-            ./bin/probes/env_probe
+            ./bin/probes/internal/env_probe
 
       - name: Probe host capabilities
         run: |
-            ./bin/host_capabilities.sh
+            ./bin/internal/host_capabilities.sh
 
       - name: Ensure asciinema is available
         run: |
