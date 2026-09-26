@@ -47,9 +47,9 @@ jobs:
 
       - name: INTERNAL - Setup Jira runtime
         run: |
-          python3 -m venv .jira-check-venv
-          .jira-check-venv/bin/python -m pip install --upgrade pip
-          .jira-check-venv/bin/python -m pip install requests
+          python3 -m venv /tmp/jira-check-venv
+          /tmp/jira-check-venv/bin/python -m pip install --upgrade pip
+          /tmp/jira-check-venv/bin/python -m pip install requests
 
       # ============================================================
       # INTERNAL / EXTERNAL BOUNDARY
@@ -59,14 +59,16 @@ jobs:
       # to an external system.
       # ============================================================
 
- 
       - name: EXTERNAL - Observe Jira context
         env:
           PYTHONPATH: bin
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-        run: .jira-check-venv/bin/python bin/probes/external/jira_context.py KAN-20
+          JIRA_VENV: /tmp/jira-check-venv
+        run: |
+          /tmp/jira-check-venv/bin/python \
+            bin/probes/external/jira_context.py KAN-20
 
       - name: EXTERNAL - Validate Jira observation
         env:
@@ -74,9 +76,5 @@ jobs:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_VENV: /tmp/jira-check-venv
         run: bash bin/probes/external/check_jira_context.sh KAN-20
-       
-
-
-
- 
