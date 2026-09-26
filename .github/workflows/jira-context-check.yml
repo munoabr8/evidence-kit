@@ -6,7 +6,8 @@ jobs:
   jira-context:
     runs-on: ubuntu-latest
     env:
-      JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+      #JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+      JIRA_BASE_URL: https://evidencekit.atlassian.net
       JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
       JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
       JIRA_VENV: /tmp/jira-check-venv
@@ -27,18 +28,14 @@ jobs:
             --quiet --disable-pip-version-check requests
         
 
-
-
       - name: Check Jira observation
         env:
           PYTHONPATH: bin
-          JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
-          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
-          /tmp/jira-check-venv/bin/python \
+          "$JIRA_VENV/bin/python" \
             bin/probes/external/jira_context.py KAN-20
 
-
       - name: Check runtime and Jira observation
+        env:
+          PYTHONPATH: bin
         run: bash bin/probes/external/check_jira_context.sh KAN-20
