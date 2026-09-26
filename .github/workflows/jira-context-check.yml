@@ -2,12 +2,13 @@ name: Jira context check
 
 on:
   pull_request:
+
 jobs:
   jira-context:
     runs-on: ubuntu-latest
+
     env:
-      #JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
-      JIRA_BASE_URL: https://evidencekit.atlassian.net
+      JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
       JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
       JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
       JIRA_VENV: /tmp/jira-check-venv
@@ -15,18 +16,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Diagnose repository variable
+        run: |
+          echo "repo=${{ github.repository }}"
+
+          if [ -z "${{ vars.JIRA_BASE_URL }}" ]; then
+            echo "vars.JIRA_BASE_URL is EMPTY"
+            exit 1
+          fi
+
+          echo "vars.JIRA_BASE_URL is available"
+          echo "JIRA_BASE_URL=${{ vars.JIRA_BASE_URL }}"
+
       - uses: actions/setup-python@v4
         if: ${{ !env.ACT }}
         with:
-          python-version: '3.12'
-
+          python-version: "3.12"
 
       - name: Prepare Python environment
         run: |
           python3 -m venv "$JIRA_VENV"
           "$JIRA_VENV/bin/python" -m pip install \
             --quiet --disable-pip-version-check requests
-        
 
       - name: Check Jira observation
         env:
@@ -38,4 +49,5 @@ jobs:
       - name: Check runtime and Jira observation
         env:
           PYTHONPATH: bin
-        run: bash bin/probes/external/check_jira_context.sh KAN-20
+        run: |
+          bash bin/probes/external/check_jira_context.sh KAN-20
