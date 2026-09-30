@@ -1,0 +1,33 @@
+name: Python syntax check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-syntax:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        script:
+          - ./bin/probes/internal/probe_context.py
+          - ./bin/probes/internal/probe_environment.py
+          - ./bin/probes/internal/probe_effective_context.py
+          - ./bin/probes/external/jira_context.py
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        if: ${{ !env.ACT }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Verify Python
+        run: python3 --version
+
+      - name: Syntax check
+        run: python3 -m py_compile "${{ matrix.script }}"

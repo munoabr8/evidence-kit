@@ -13,8 +13,12 @@ jobs:
       matrix:
         script:
           - ./bin/smoke_test.sh
+          - ./bin/run_and_capture.sh
           - ./bin/probes/internal/env_probe
           - ./bin/probes/internal/host_capabilities.sh
+          - ./bin/probes/internal/workspace_probe.sh
+          - ./bin/probes/external/check_jira_context.sh
+          - ./bin/run-wf
 
     steps:
       - uses: actions/checkout@v4
