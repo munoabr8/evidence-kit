@@ -16,18 +16,27 @@ dump_diagnostics() {
   echo "--- END DIAGNOSTICS ---"
 }
 
+# shellcheck disable=SC2317
 cleanup() {
-  if [ -n "${SERVER_PID:-}" ]; then # issue with shellcheck
-    kill "${SERVER_PID}" 2>/dev/null || true # issue with shellcheck
-    wait "${SERVER_PID}" 2>/dev/null || true # issue with shellcheck
+  if [ -n "${SERVER_PID:-}" ]; then
+    kill "$SERVER_PID" 2>/dev/null || true
+    wait "$SERVER_PID" 2>/dev/null || true
   fi
 }
 
-trap 'rc=$?;  # issue with shellcheck
-echo "smoke_test.sh failed rc=$rc"; 
-dump_diagnostics || true; 
-cleanup; exit $rc' ERR
-trap 'cleanup' EXIT
+# shellcheck disable=SC2317
+on_error() {
+  local rc=$?
+
+  echo "smoke_test.sh failed rc=$rc"
+  dump_diagnostics || true
+
+  exit "$rc"
+}
+
+trap on_error ERR
+trap cleanup EXIT
+
 
 TARGET="${TARGET:-smoke}"
 ARTIFACTS_DIR="${ARTIFACTS_DIR:-artifacts}"

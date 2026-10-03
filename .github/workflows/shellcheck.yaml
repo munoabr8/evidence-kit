@@ -7,17 +7,30 @@ on:
 jobs:
   shellcheck:
     runs-on: ubuntu-latest
+
     strategy:
+      fail-fast: false
       matrix:
         script:
-          #- ./bin/smoke_test.sh
+          - ./bin/smoke_test.sh
+          - ./bin/run_and_capture.sh
           - ./bin/probes/internal/env_probe
-          #- ./bin/host_capabilities.sh 
+          - ./bin/probes/internal/host_capabilities.sh
+          - ./bin/probes/internal/workspace_probe.sh
+          - ./bin/probes/external/check_jira_context.sh
+          - ./bin/run-wf
+
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install ShellCheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Install ShellCheck for act
+        if: ${{ env.ACT }}
+        run: |
+          apt-get update
+          apt-get install -y shellcheck
+
+      - name: Verify ShellCheck
+        run: shellcheck --version
 
       - name: Check script
         run: shellcheck "${{ matrix.script }}"

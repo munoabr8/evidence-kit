@@ -21,6 +21,7 @@ tests/**
 
 .secrets
 .env.act
+.vars
 
 .env
 *.log
