@@ -8,18 +8,54 @@ on:
 jobs:
   scope-check:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-  
+
       - name: Set up Python
+        if: ${{ !env.ACT }}
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
+
+      - name: Verify local Python
+        if: ${{ env.ACT }}
+        run: |
+          python3 --version
+
       - name: Install dependencies (none required)
         run: |
           python3 -V
+ 
+
+      - name: Probe execution environment
+        run: |
+            ./bin/probes/internal/env_probe
+
+      - name: Probe host capabilities
+        run: |
+            ./bin/probes/internal/host_capabilities.sh
+
+      - name: Ensure asciinema is available
+        run: |
+          make -f asciinema.mk install
+          asciinema --version      
+
+      - name: Record container exit proof
+        run: |
+            command -v asciinema
+            mkdir -p artifacts/cast
+            asciinema rec \
+            -c "./bin/prove_container_exit.sh" \
+            artifacts/cast/container-exit-proof.cast
+
+      - name: Verify recording exists
+        run: |
+           test -s artifacts/cast/container-exit-proof.cast
+
+
       - name: Run scope-check
         run: |
           python3 bin/scope_check.py

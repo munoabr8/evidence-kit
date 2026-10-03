@@ -7,15 +7,12 @@ The Jira issue workflow is not yet proceduralized. I need a repeatable command s
 Preconditions:
 - Jira CLI has already been initialized with jira init.
 - JIRA_API_TOKEN has already been exported.
+   -> export JIRA_API_TOKEN=‘correct-JIRA-API_TOKEN’
 - The default Jira project is configured as KAN.
 - The Evidence Kit repo is available locally.
 
 Jira site:
 https://evidencekit.atlassian.net/
-
-
-
-
 
 
 

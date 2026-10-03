@@ -2,152 +2,197 @@
 # scripts/anchor.sh - Executes the Evidence Anchoring Contract
 # Formalized: { P } anchor.sh { Q }
 
-set -u
-set -o pipefail
+set -euo pipefail
 
-manifest_file="evidence-manifest.txt"
+readonly MANIFEST_FILE="evidence-manifest.txt"
+
+DRY_RUN=false
+if [[ "${1:-}" == "--dry-run" ]]; then
+    DRY_RUN=true
+    shift
+fi
+
 ticket_id="${1:-}"
 
-# 1. Validate Precondition (P)
-if [[ -z "$ticket_id" ]]; then
-    echo "Usage: ./scripts/anchor.sh [JIRA-TICKET-ID]"
-    exit 1
-fi
-
-# Enforce valid_id(TICKET_ID) schema validation
-if [[ ! "$ticket_id" =~ ^[A-Z]+-[0-9]+$ ]]; then
-    echo "[P] Precondition FAILED: Ticket ID format is invalid."
-    exit 1
-fi
-
-repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
-    echo "[P] Precondition FAILED: Must be inside a Git repository."
+fail() {
+    echo "$1" >&2
     exit 1
 }
-cd "$repo_root" || exit 1
 
-if [[ ! -f "$manifest_file" ]]; then
-    echo "[P] Precondition FAILED: $manifest_file not found at repo root."
+if [[ -z "$ticket_id" ]]; then
+    echo "Usage: ./scripts/anchor.sh [--dry-run] JIRA-TICKET-ID" >&2
     exit 1
 fi
 
-# Capture M = read(manifest) into an immutable in-memory array
-declare -r -a M=($(awk '!/^[[:space:]]*#/ && !/^[[:space:]]*$/ {gsub(/\r/, ""); print}' "$manifest_file"))
+if [[ ! "$ticket_id" =~ ^[A-Z]+-[0-9]+$ ]]; then
+    fail "[P] Precondition FAILED: Ticket ID format is invalid."
+fi
 
-# Validate safe_path(f) and size(f) > 0 for all f ∈ M before any mutations occur
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" ||
+    fail "[P] Precondition FAILED: Must be inside a Git repository."
+
+cd "$repo_root" ||
+    fail "[P] Precondition FAILED: Could not move to repository root."
+
+[[ -f "$MANIFEST_FILE" ]] ||
+    fail "[P] Precondition FAILED: $MANIFEST_FILE not found at repo root."
+
+echo "[P] Checking manifest completeness..."
+shopt -s nullglob
+for f in artifacts/*.tex; do
+    grep -qxF -- "$f" "$MANIFEST_FILE" ||
+        fail "[P] Precondition FAILED: Untracked artifact detected -> $f"
+done
+shopt -u nullglob
+
+mapfile -t M < <(
+    awk '
+        !/^[[:space:]]*#/ &&
+        !/^[[:space:]]*$/ {
+            sub(/\r$/, "")
+            print
+        }
+    ' "$MANIFEST_FILE"
+)
+readonly M
+
 for file in "${M[@]}"; do
-    if [[ "$file" =~ ^/ || "$file" =~ \.\./ || "$file" =~ ^\.git/ ]]; then
-        echo "[P] Precondition FAILED: Unsafe path detected -> $file"
-        exit 1
+    if [[ "$file" == /* || "$file" == ../* || "$file" == */../* || "$file" == .git/* ]]; then
+        fail "[P] Precondition FAILED: Unsafe path detected -> $file"
     fi
-    
-    if [[ ! -f "$file" ]]; then
-        echo "[P] Precondition FAILED: Evidence file missing -> $file"
-        exit 1
-    elif [[ ! -s "$file" ]]; then
-        echo "[P] Precondition FAILED: Empty file blob violation -> $file"
-        exit 1
-    fi
+
+    [[ -f "$file" ]] ||
+        fail "[P] Precondition FAILED: Evidence file missing -> $file"
+
+    [[ -s "$file" ]] ||
+        fail "[P] Precondition FAILED: Empty file blob violation -> $file"
 done
 
-# Assert tracking authority utilities exist
 echo "[P] Verifying tracking authority environment..."
-if ! command -v jira &> /dev/null; then
-    echo "[P] Precondition FAILED: 'jira' CLI tool is not installed or in PATH."
-    exit 1
-fi
+command -v jira >/dev/null 2>&1 ||
+    fail "[P] Precondition FAILED: 'jira' CLI tool is not installed or in PATH."
 
-if ! command -v jq &> /dev/null; then
-    echo "[P] Precondition FAILED: 'jq' tool is not installed or in PATH."
-    exit 1
-fi
+command -v jq >/dev/null 2>&1 ||
+    fail "[P] Precondition FAILED: 'jq' tool is not installed or in PATH."
 
-# EXECUTION ORDER FIXED: Fetch the payload before running status checks
 echo "[P] Fetching remote state from tracking authority for $ticket_id..."
-RAW_RESPONSE=$(jira issue view "$ticket_id" --raw 2>&1)
-if [[ $? -ne 0 ]]; then
-    echo "[P] Precondition FAILED: 'jira' CLI execution encountered an error."
-    echo "    Details: $RAW_RESPONSE"
+if ! RAW_RESPONSE="$(jira issue view "$ticket_id" --raw 2>&1)"; then
+    echo "[P] Precondition FAILED: 'jira' CLI execution encountered an error." >&2
+    echo "    Details: $RAW_RESPONSE" >&2
     exit 1
 fi
 
-CURRENT_STATUS=$(echo "$RAW_RESPONSE" | jq -r '.fields.status.name' 2>/dev/null)
+anchor_allowed_status() {
+    local status="$1"
 
-if [[ -z "$CURRENT_STATUS" || "$CURRENT_STATUS" == "null" ]]; then
-    echo "[P] Precondition FAILED: Unable to resolve status field from Jira payload."
-    echo "    Raw Payload: $RAW_RESPONSE"
+    case "$status" in
+        "STRUCTURED ANALYSIS" | \
+        "FORMAL VERIFICATION" | \
+        "ARTIFACT REVIEW" | \
+        "DONE: READY-FOR-SEAL" | \
+        "DONE: VERIFIED")
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+CURRENT_STATUS="$(
+    jq -r '.fields.status.name // empty' <<<"$RAW_RESPONSE" |
+        xargs |
+        tr '[:lower:]' '[:upper:]'
+)"
+
+[[ -n "$CURRENT_STATUS" ]] ||
+    fail "[P] Precondition FAILED: Unable to resolve Jira status."
+
+if ! anchor_allowed_status "$CURRENT_STATUS"; then
+    echo "[P] Precondition FAILED: State asymmetry detected." >&2
+    echo "    Ticket $ticket_id is currently '$CURRENT_STATUS'." >&2
+    echo "    Contract requires an authorized workflow state." >&2
     exit 1
 fi
 
-# Evaluate against the formalized authorized set predicate: {"In Review", "Done"}
-if [[ "$CURRENT_STATUS" != "In Review" && "$CURRENT_STATUS" != "Done" ]]; then
-    echo "[P] Precondition FAILED: State asymmetry detected."
-    echo "    Ticket $ticket_id is currently '$CURRENT_STATUS', but contract requires 'In Review' or 'Done'."
-    exit 1
-fi
-
-# Helper function to verify invariant state against the immutable snapshot M
 verify_manifest_against_head() {
     local all_met=true
     local file
+
+    git cat-file -e "HEAD:$MANIFEST_FILE" 2>/dev/null || {
+        echo "[FAIL] Invariant Violation: $MANIFEST_FILE is not tracked in HEAD."
+        all_met=false
+    }
+
     for file in "${M[@]}"; do
         if ! git cat-file -e "HEAD:$file" 2>/dev/null; then
             echo "[FAIL] Invariant Violation: $file is not tracked in HEAD."
             all_met=false
         fi
     done
-    [[ "$all_met" == true ]] && return 0 || return 1
+
+    [[ "$all_met" == true ]]
 }
 
 echo "[P] Precondition Met: Contract initiated and synchronized for $ticket_id."
 
-# 2. Command (C)
-echo "[C] Staging manifest and evidence files..."
-
-git add -- "$manifest_file" || {
-    echo "[C] Failed to stage $manifest_file."
-    exit 1
-}
-
+echo "[P] Validating semantic contracts in manifest artifacts..."
 for file in "${M[@]}"; do
-    if ! git add -f -- "$file"; then
-        echo "[C] Failed to stage verified file: $file"
-        exit 1
+    if [[ "$file" == *.tex ]]; then
+        ./scripts/verify-contract.sh "$file" "$ticket_id" || {
+            fail "[P] Precondition FAILED: Semantic verification failed for $file."
+        }
     fi
 done
+echo "[P] Semantic validation passed."
 
-# Handle the No-Op / Idempotency check safely
+if [[ "$DRY_RUN" == true ]]; then
+    echo "[!] DRY RUN ENABLED: Validations passed. Skipping staging and commit."
+    echo "--- EVIDENCE ID WOULD BE: ${ticket_id}@$(git rev-parse --short HEAD) ---"
+    exit 0
+fi
+
+# Prevent unrelated staged changes from being included in the evidence commit.
+if ! git diff --cached --quiet; then
+    fail "[P] Precondition FAILED: Git index already contains staged changes."
+fi
+
+echo "[C] Staging manifest and evidence files..."
+
+git add -- "$MANIFEST_FILE" ||
+    fail "[C] Failed to stage $MANIFEST_FILE."
+
+for file in "${M[@]}"; do
+    git add -f -- "$file" ||
+        fail "[C] Failed to stage verified file: $file"
+done
+
 if git diff --cached --quiet; then
     echo "[C] No new changes staged. Checking if current HEAD satisfies contract..."
+
     if verify_manifest_against_head; then
         commit_hash="$(git rev-parse --short HEAD)"
-        echo "[Q] Postcondition Met (Pre-existing state valid)."
+        echo "[Q] Postcondition Met: Pre-existing state valid."
         echo "--- EVIDENCE ID: ${ticket_id}@${commit_hash} ---"
         exit 0
-    else
-        echo "[Q] Postcondition FAILED: No changes staged, and HEAD is missing manifest files."
-        exit 1
     fi
+
+    fail "[Q] Postcondition FAILED: No changes staged, and HEAD is missing manifest files."
 fi
 
-# Proceed with commit if changes exist
 commit_message="Evidence snapshot for $ticket_id: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-if ! git commit -m "$commit_message"; then
-    echo "[C] Commit FAILED."
-    exit 1
-fi
 
-# Record the resulting content-addressed object identifier
+git commit -m "$commit_message" ||
+    fail "[C] Commit FAILED."
+
 commit_hash="$(git rev-parse --short HEAD)"
 
-# 3. Postcondition (Q)
 echo "[Q] Verifying manifest against committed HEAD..."
 if verify_manifest_against_head; then
     evidence_id="${ticket_id}@${commit_hash}"
     echo "[Q] Postcondition Met: Invariant verified."
     echo "--- EVIDENCE ID: $evidence_id ---"
     exit 0
-else
-    echo "[Q] Postcondition FAILED: Manifest files not completely tracked in commit."
-    exit 1
 fi
+
+fail "[Q] Postcondition FAILED: Manifest files not completely tracked in commit."

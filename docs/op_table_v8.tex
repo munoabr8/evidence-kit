@@ -1,0 +1,115 @@
+
+\begin{sidewaystable}[htbp]
+\centering
+\Large
+\renewcommand{\arraystretch}{1.9}
+\begin{adjustbox}{width=1.05\textheight,center}  
+\begin{tabular}{|l|l|l|l|l|l|l|}
+\hline
+\textbf{Source State ($S_{\text{init}}$)} &
+\textbf{Target State ($S_{\text{term}}$)} &
+\textbf{Intent / Executor} &
+\textbf{Layer Mutation} &
+\textbf{Guard Condition (Time $t$)} &
+\textbf{Mutation Effect (Time $t'$)} &
+\textbf{Evidence Artifact} \\ \hline
+
+
+
+\StatusTodo & \StatusObserveProbe & \texttt{make run-probes} & $\MutatesEvidence \land \AdvancesPhase$ & $\Selected{k}{t} \land \TransitionTime{t}{t'}$ & $\Observe{k}{t'} \land \Phase{k}{t'} = \StatusObserveProbe$ & Raw log files \\ \hline
+
+\StatusObserveProbe & \StatusStructuredAnalysis & \texttt{make init-analysis} & $\MutatesEvidence \land \AdvancesPhase$ & $\Phase{k}{t} = \StatusObserveProbe \land \Observe{k}{t} \land \TransitionTime{t}{t'}$ & $\StructuredAnalysisSet{k}{A} \land \Phase{k}{t'} = \StatusStructuredAnalysis$ & \texttt{main\_refactor.tex} + contract \\ \hline
+
+\StatusStructuredAnalysis & 
+\StatusStructuredAnalysis & 
+\texttt{make refresh-analysis} & 
+$\MutatesEvidence$ & 
+$\PhasePreservingTransition{k}{\StatusStructuredAnalysis}{t}{t'} 
+\land \StructuredAnalysisSet{k}{A} 
+\land \Observe{k}{t}$ & 
+$\RefreshAnalysis{k}{t}{A}{A_{new}}$ & 
+Refreshed analysis diff \\ \hline
+
+\StatusStructuredAnalysis & \StatusObserveProbe & \texttt{make deepen-probe} & $\MutatesEvidence \land \AdvancesPhase$ & $\Phase{k}{t} = \StatusStructuredAnalysis \land \MissingEvidence{k}{t} \land \TransitionTime{t}{t'}$ & $\Observe{k}{t'} \land \Phase{k}{t'} = \StatusObserveProbe$ & Invalidated contract log \\ \hline
+
+
+\StatusStructuredAnalysis & 
+\StatusFormalVerification & 
+\texttt{make verify-transition-state TICKET=k \&\& make verify-artifact} & 
+$\MutatesEvidence \land \AdvancesPhase$ & 
+$\Phase{k}{t} = \StatusStructuredAnalysis
+\land \AnchorAllowed{k}{t}
+\land \StructuredAnalysisSet{k}{A}
+\land \exists t_0 \le t : \ManifestSnapshot{M}{t_0}
+\land \TransitionTime{t}{t'}$ & 
+$\VerificationResult{k}{h}{M}{r}{t'} \land \Phase{k}{t'} = \StatusFormalVerification$ & 
+Verification log output \\ \hline
+
+ 
+
+
+
+\StatusFormalVerification & 
+\StatusArtifactReview & 
+\texttt{jira issue move ...} & 
+$\MutatesJira \land \AdvancesPhase$ &
+$\Phase{k}{t} = \StatusFormalVerification
+\land \VerificationResult{k}{h}{M}{\text{pass}}{t}
+\land \Verify{k}{h}{M}
+\land \TransitionTime{t}{t'}$ & 
+$\ReviewRequested{k}{h}{t'} \land \Phase{k}{t'} = \StatusArtifactReview$ & 
+Review request trail \\ \hline
+
+\StatusFormalVerification & 
+\StatusObserveProbe & 
+\texttt{make deepen-probe} & 
+$\MutatesEvidence \land \AdvancesPhase$ &
+$\Phase{k}{t} = \StatusFormalVerification
+\land
+\big(
+    \VerificationResult{k}{h}{M}{\text{fail}}{t}
+    \lor
+    \VerificationResult{k}{h}{M}{\text{unknown}}{t}
+    \lor
+    \MissingEvidence{k}{t}
+\big)
+\land \TransitionTime{t}{t'}$ & 
+$\Observe{k}{t'} \land \Phase{k}{t'} = \StatusObserveProbe$ & 
+Failed verification log \\ \hline
+
+\StatusArtifactReview & 
+\StatusReadyForSeal & 
+\texttt{jira issue move ...} & 
+$\MutatesJira \land \AdvancesPhase$ &
+$\Phase{k}{t} = \StatusArtifactReview \land \SealReady{k}{h} \land \TransitionTime{t}{t'}$ & 
+$\ReadyForSealDone{k}{t'} \land \Phase{k}{t'} = \StatusReadyForSeal$ & 
+Pre-signing system state \\ \hline
+
+\StatusReadyForSeal & 
+\StatusVerified & 
+\texttt{git tag -s ...} & 
+$\MutatesGit \land \AdvancesPhase$ &
+$\Phase{k}{t} = \StatusReadyForSeal \land \ReadyForSealDone{k}{t} \land \TransitionTime{t}{t'}$ & 
+$\FinalSeal{k}{h} \land \VerifiedDone{k}{t'} \land \Phase{k}{t'} = \StatusVerified$ & 
+Signed GPG final tag \\ \hline
+
+
+
+
+\end{tabular}
+\end{adjustbox}
+\caption{Operational Workflow: Directed Graph State Transition Matrix.}
+\label{tab:operational_matrix}
+\end{sidewaystable}
+
+
+
+
+\begin{enumerate}
+
+
+\item Guard = condition required before transition is valid.
+\item Effect = state/artifact mutation caused by the transition.
+\item Evidence Artifact = inspectable proof that the transition occurred.
+\item Layer Mutation = state-space layer directly changed or semantically advanced by the transition.
+\end{enumerate}

@@ -1,0 +1,104 @@
+name: Environmental Feedback Loop PoC
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  test-and-feedback:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run verification
+        id: run_step
+        run: |
+          echo "Running environmental verification..."
+
+          # Replace this with the real verification command.
+          #
+          # Examples:
+          # make verify
+          # pytest
+          # bash bin/probes/internal/workspace_probe.sh
+          # python3 bin/probes/internal/probe_effective_context.py
+          #
+          # Change to `exit 1` to test failure feedback.
+          exit 0
+
+      - name: Show effective event context
+        run: |
+          echo "event=${{ github.event_name }}"
+          echo "actor=${{ github.actor }}"
+          echo "repository=${{ github.repository }}"
+          echo "PR=${{ github.event.pull_request.number }}"
+
+      - name: Post environmental feedback
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          STEP_OUTCOME: ${{ steps.run_step.outcome }}
+        with:
+          script: |
+            const status = process.env.STEP_OUTCOME;
+            const icon = status === 'success' ? '✅' : '❌';
+
+            const pullRequest = context.payload.pull_request;
+
+            const headSha =
+              pullRequest?.head?.sha ??
+              context.sha ??
+              'unavailable';
+
+            const mergeSha =
+              context.sha ??
+              'unavailable';
+
+            const runUrl =
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
+              `/actions/runs/${context.runId}`;
+
+            const body = `### ${icon} Environmental Feedback
+
+            **Observation**
+            - Verification outcome: \`${status}\`
+
+            **Repository state**
+            - PR head SHA: \`${headSha}\`
+            - Tested merge SHA: \`${mergeSha}\`
+
+            **Evidence**
+            - [Workflow run](${runUrl})
+
+            **Feedback transition**
+            - Repository state → verification → observed outcome
+
+            _Generated from an observed GitHub Actions execution._`;
+
+            if (process.env.ACT) {
+              console.log("Running under act.");
+              console.log(body);
+              return;
+            }
+
+            if (!context.issue.number) {
+              core.warning(
+                "No pull request or issue number was available; skipping comment."
+              );
+              console.log(body);
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });

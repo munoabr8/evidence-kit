@@ -4,6 +4,7 @@ from gen_index_ctx import set_context, get_art_dir, get_embed_limit
 from template import render_template
 from html import escape
 
+from contexts import IndexContext
 import argparse
 import base64
 import mimetypes
@@ -123,8 +124,16 @@ def copy_player_assets(art_dir: Path, repo_root: Path, wrapper_dir: Path):
     return js, css
 
 
+def make_wrapper(
+    rel_path: Path,
+    src_path: Path,
+    mime: str | None,
+    *,
+    ctx: IndexContext,
+):
+    art_dir = ctx.art_dir
+    embed_limit = ctx.embed_limit
 
-def make_wrapper(rel_path: Path, src_path: Path, mime: str | None):
     """
     Generate an HTML wrapper under artifacts/views/.
 
@@ -135,8 +144,8 @@ def make_wrapper(rel_path: Path, src_path: Path, mime: str | None):
         -> artifacts/views/cast/hello.cast.html
     """
 
-    art_dir = get_art_dir()
-    embed_limit = get_embed_limit()
+    #art_dir = get_art_dir()
+    #embed_limit = get_embed_limit()
 
     views_dir = art_dir / "views" / rel_path.parent
     views_dir.mkdir(parents=True, exist_ok=True)
@@ -311,13 +320,22 @@ def main():
 
     set_context(art_dir=art_dir, embed_limit=args.embed_limit_bytes)
 
+    ctx = IndexContext(
+        art_dir=get_art_dir(),
+        embed_limit=get_embed_limit(),
+    )
+
     # Generate wrappers for previewable artifacts.
     for role, src_path, rel_path in iter_artifacts(art_dir):
         mime, _ = mimetypes.guess_type(str(src_path))
 
         if is_wrappable(src_path):
-            make_wrapper(rel_path=rel_path, src_path=src_path, mime=mime)
-
+            make_wrapper(
+                rel_path=rel_path,
+                src_path=src_path,
+                mime=mime,
+                ctx=ctx,
+            )
     remove_obsolete_wrappers(art_dir)
 
     links = []

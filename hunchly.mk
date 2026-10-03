@@ -15,6 +15,9 @@ LOG_DIR   := $(ART_DIR)/logs
 ASSET_SRC_DIR ?= media-pack/player
 
 
+
+
+
  setup:
 	@command -v ttyd >/dev/null || { \
 		if command -v apk >/dev/null 2>&1; then \
@@ -56,7 +59,7 @@ live-stop:
 	@[ -f artifacts/ttyd.pid ] && kill $$(cat artifacts/ttyd.pid) && rm -f artifacts/ttyd.pid || echo "not running"
 
 MKDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-PROBE := $(MKDIR)bin/probes/env_probe
+PROBE := $(MKDIR)bin/probes/internal/env_probe
 
 .env.probe:
 	@'$(PROBE)' --print-env > $@ || { rm -f $@; exit 1; }
@@ -81,12 +84,16 @@ fresh-run:
 	@$(MAKE) -f hunchly.mk serve
 
 
+.PHONY: all demo serve
 
 all:
 	@$(MAKE) -f hunchly.mk capture
 	@$(MAKE) -f hunchly.mk artifacts-index
 	@$(MAKE) -f hunchly.mk smoke-playback
-	@$(MAKE) -f hunchly.mk serve	
+
+demo: all
+	@$(MAKE) -f hunchly.mk serve
+
  
 check-probe:
 	@$(PROBE) --version >/dev/null || { echo "bad env_probe_proto" >&2; exit 1; }
