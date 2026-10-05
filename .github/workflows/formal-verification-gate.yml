@@ -1,0 +1,248 @@
+name: Formal Verification Gate
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+  workflow_dispatch:
+    inputs:
+      ticket:
+        description: "Jira ticket ID, e.g. KAN-20"
+        required: true
+        type: string
+
+jobs:
+  verify-state:
+    name: Verify formal invariants
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    env:
+      JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL }}
+      JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+      JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # ------------------------------------------------------------
+      # Resolve ticket identity
+      # ------------------------------------------------------------
+
+      - name: Resolve ticket ID
+        id: ticket
+        shell: bash
+        env:
+          MANUAL_TICKET: ${{ inputs.ticket }}
+          PR_BRANCH: ${{ github.head_ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+
+          ticket=""
+
+          if [[ -n "${MANUAL_TICKET:-}" ]]; then
+            ticket="$MANUAL_TICKET"
+
+          elif [[ -n "${PR_BRANCH:-}" ]]; then
+            ticket="$(
+              printf '%s\n' "$PR_BRANCH" |
+              grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
+              head -n 1 || true
+            )"
+          fi
+
+          if [[ -z "$ticket" && -n "${PR_TITLE:-}" ]]; then
+            ticket="$(
+              printf '%s\n' "$PR_TITLE" |
+              grep -oE '[A-Z][A-Z0-9]+-[0-9]+' |
+              head -n 1 || true
+            )"
+          fi
+
+          if [[ -z "$ticket" ]]; then
+            echo "::error::Unable to establish Jira ticket ID."
+            exit 1
+          fi
+
+          echo "Resolved ticket: $ticket"
+          echo "ticket=$ticket" >> "$GITHUB_OUTPUT"
+
+      # ------------------------------------------------------------
+      # Establish Python Jira runtime
+      # ------------------------------------------------------------
+
+      - name: Verify Python runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 --version
+
+          python3 - <<'PY'
+          import sys
+          assert sys.version_info >= (3, 12), sys.version
+          PY
+
+      - name: Create Jira runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 -m venv /tmp/jira-check-venv
+          /tmp/jira-check-venv/bin/python -m pip install --upgrade pip
+          /tmp/jira-check-venv/bin/python -m pip install requests
+
+
+      # ------------------------------------------------------------
+      # Check execution environment
+      # ------------------------------------------------------------
+
+      - name: Verify required tools
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          command -v git >/dev/null || {
+            echo "::error::git is unavailable."
+            exit 1
+          }
+
+          command -v jq >/dev/null || {
+            echo "::error::jq is unavailable."
+            exit 1
+          }
+
+          command -v gpg >/dev/null || {
+            echo "::error::gpg is unavailable."
+            exit 1
+          }
+
+          git --version
+          jq --version
+          gpg --version | head -n 1
+
+      - name: Validate Jira environment
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          : "${JIRA_BASE_URL:?JIRA_BASE_URL repository variable is required}"
+          : "${JIRA_EMAIL:?JIRA_EMAIL repository secret is required}"
+          : "${JIRA_API_TOKEN:?JIRA_API_TOKEN repository secret is required}"
+
+
+      - name: Diagnose Jira values
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "base URL=$JIRA_BASE_URL"
+          echo "email length=${#JIRA_EMAIL}"
+          echo "token length=${#JIRA_API_TOKEN}"
+
+
+      - name: Verify Jira identity
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          curl \
+            --fail-with-body \
+            --silent \
+            --show-error \
+            --user "${JIRA_EMAIL}:${JIRA_API_TOKEN}" \
+            --header "Accept: application/json" \
+            "${JIRA_BASE_URL}/rest/api/3/myself" |
+            jq '{accountId, displayName, active, emailAddress}'
+
+
+      - name: Diagnose Jira access
+        shell: bash
+        env:
+          TICKET: ${{ steps.ticket.outputs.ticket }}
+        run: |
+          set -euo pipefail
+
+          echo "JIRA_BASE_URL=$JIRA_BASE_URL"
+          echo "TICKET=$TICKET"
+
+          http_code="$(
+            curl \
+              --silent \
+              --output /tmp/jira-response.json \
+              --write-out "%{http_code}" \
+              --user "${JIRA_EMAIL}:${JIRA_API_TOKEN}" \
+              --header "Accept: application/json" \
+              "${JIRA_BASE_URL}/rest/api/3/issue/${TICKET}?fields=status"
+          )"
+
+          echo "HTTP status: $http_code"
+
+          jq . /tmp/jira-response.json || cat /tmp/jira-response.json
+
+
+
+
+      # ------------------------------------------------------------
+      # Observe external Jira state
+      # ------------------------------------------------------------
+      - name: Observe Jira status
+        id: jira
+        shell: bash
+        env:
+          TICKET: ${{ steps.ticket.outputs.ticket }}
+          PYTHONPATH: bin
+        run: |
+          set -euo pipefail
+
+          output="$(
+            /tmp/jira-check-venv/bin/python \
+              bin/probes/external/jira_context.py \
+              "$TICKET"
+          )"
+
+          printf '%s\n' "$output"
+
+          status="$(
+            printf '%s\n' "$output" |
+            jq -er '.observed_state |
+              select(type == "string" and length > 0)'
+          )"
+
+          echo "Observed Jira status: $status"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      # ------------------------------------------------------------
+      # Establish cryptographic state
+      # ------------------------------------------------------------
+      - name: Inspect verification tags
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Available FINAL tags:"
+          git tag --list '*-FINAL' || true
+
+      # ------------------------------------------------------------
+      # Formal verification
+      # ------------------------------------------------------------
+
+      - name: Run formal verification gate
+        shell: bash
+        env:
+          TICKET: ${{ steps.ticket.outputs.ticket }}
+          JIRA_STATUS: ${{ steps.jira.outputs.status }}
+        run: |
+          set -euo pipefail
+
+          chmod +x scripts/verify-state.sh
+          ./scripts/verify-state.sh --check-invariants

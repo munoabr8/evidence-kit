@@ -164,10 +164,9 @@ verify_manifest_entries_against_working_tree() {
     return 0
 }
 
-verify_finality_seal() {
+verify_finality_seal2() {
     local ticket_id="$1"
-    # Check if a GPG-signed tag exists for this ticket
-    if git rev-parse --verify "refs/tags/${ticket_id}-FINAL" >/dev/null 2>&1; then
+     if git rev-parse --verify "refs/tags/${ticket_id}-FINAL" >/dev/null 2>&1; then
         echo "[OK] Verified Finality Seal: ${ticket_id}-FINAL"
         return 0
     else
@@ -176,9 +175,34 @@ verify_finality_seal() {
     fi
 }
 
+
+verify_finality_seal() {
+    local ticket_id="$1"
+    local tag="${ticket_id}-FINAL"
+    # Check if a GPG-signed tag exists for this ticket
+
+    if ! git rev-parse --verify "refs/tags/${tag}" >/dev/null 2>&1; then
+        echo "[FAIL] Invariant Violation: Finality tag '$tag' does not exist."
+        return 1
+    fi
+
+    if ! git tag -v "$tag"; then
+        echo "[FAIL] Invariant Violation: Finality tag '$tag' has no valid signature."
+        return 1
+    fi
+
+    echo "[OK] Verified Cryptographic Finality Seal: $tag"
+}
+
 require_ticket_id() {
     if [[ -z "${TICKET:-}" ]]; then
         fail "Precondition Violation: TICKET environment variable is required."
+    fi
+}
+
+require_jira_status() {
+    if [[ -z "${JIRA_STATUS:-}" ]]; then
+        fail "Precondition Violation: JIRA_STATUS environment variable is required."
     fi
 }
 
@@ -190,6 +214,7 @@ main() {
     require_head_exists
     require_manifest_exists_in_head
     require_ticket_id
+    require_jira_status
 
     # 2. Get the ticket ID from the environment (or pass it as an argument)
     # If your pipeline doesn't pass it yet, you may need to export it or pass via make
@@ -201,14 +226,21 @@ main() {
     # 3. Verify Manifest
     if verify_manifest_entries_against_working_tree; then
         
-            local current_status
-                if ! current_status=$(
-                    jira issue view "$ticket_id" --raw |
-                    jq -er '.fields.status.name |
-                select(type == "string" and length > 0)'
-                    ); then
-                    fail "Cannot establish Jira status for $ticket_id."
-                fi
+            # local current_status
+            #     if ! current_status=$(
+            #         jira issue view "$ticket_id" --raw |
+            #         jq -er '.fields.status.name |
+            #     select(type == "string" and length > 0)'
+            #         ); then
+            #         fail "Cannot establish Jira status for $ticket_id."
+            #     fi
+            local current_status="${JIRA_STATUS:-}"
+
+            if [[ -z "$current_status" ]]; then
+                fail "Precondition Violation: JIRA_STATUS environment variable is required."
+            fi
+
+                
         if [[ "$current_status" == "Done" ]]; then
             if ! verify_finality_seal "$ticket_id"; then
                 echo "--------------------------------------------------"
@@ -231,5 +263,7 @@ main() {
 
     
 }
+
+
 
 main "$@"
