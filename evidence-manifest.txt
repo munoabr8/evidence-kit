@@ -9,4 +9,5 @@ artifacts/KAN-20-analysis.tex
 #artifacts/main_refactor.tex
 
 
-#docs/op_table_v8.tex
+#docs/op_table_v8.texartifacts/main_refactor.tex
+#artifacts/main_refactor.tex
